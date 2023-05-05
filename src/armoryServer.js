@@ -39,7 +39,7 @@ class ArmoryServer{
       res.status(400).send('auth_token missing.');
       return false;
     }
-    let user = await Server.verifyToken(req.headers.auth_token).catch(console.error);
+    let user = await ArmoryServer.verifyToken(req.headers.auth_token).catch(console.error);
     if("error" in user){
       res.status(400).send(user.error);
       return false;

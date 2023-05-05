@@ -35,7 +35,7 @@ class ArmoryServer{
     });
   }
   static async checkToken(req,res,next){
-    if(!req.Headers['auth_token']){
+    if(!req.headers['auth_token']){
       res.status(400).send('auth_token missing.');
       return false;
     }

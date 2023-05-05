@@ -15,10 +15,9 @@ const TargetImage = require('./models/targetImage');
 
 //const fs = require('fs');
 
-//on posts, check content-type for multipart/form-data. Reject it otherwise.
-
 class ArmoryServer{
-
+  static PostErrorStr = 'POSTs must be made as multipart/form-data';
+  static PutErrorStr = 'PUTs must be made as multipart/form-data';
   static verifyToken(auth_token){
     if(auth_token === undefined){
       throw {error:'Token not present'};
@@ -65,8 +64,13 @@ class ArmoryServer{
     }
   }
   async putFirearm(req,res,next){
-    const busboy = Busboy({headers:req.headers});
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PutErrorStr});
+      }
       try{
         let model = await new Firearm(req.params.id)._build();
         busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
@@ -82,7 +86,12 @@ class ArmoryServer{
   }
   async postFirearm(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      const busboy = Busboy({headers:req.headers});
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PostErrorStr});
+      }
       let model = new Firearm();
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
       busboy.on('finish', async ()=>{
@@ -120,8 +129,13 @@ class ArmoryServer{
     }
   }
   async putAmmo(req,res,next){
-    const busboy = Busboy({headers:req.headers});
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PutErrorStr});
+      }
       try{
         let model = await new Ammo(req.params.id)._build();
         busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
@@ -137,7 +151,12 @@ class ArmoryServer{
   }
   async postAmmo(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      const busboy = Busboy({headers:req.headers});
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PostErrorStr});
+      }
       let model = new Ammo();
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
       busboy.on('finish', async ()=>{
@@ -171,12 +190,17 @@ class ArmoryServer{
   async getAllAmmoPurchase(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
       let record = new AmmoPurchase();
-      res.send(await record.getAll());
+      return res.send(await record.getAll());
     }
   }
   async putAmmoPurchase(req,res,next){
-    const busboy = Busboy({headers:req.headers});
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PutErrorStr});
+      }
       try{
         let model = await new AmmoPurchase(req.params.id)._build();
         busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
@@ -186,13 +210,18 @@ class ArmoryServer{
         });
         return req.pipe(busboy);
       }catch(err){
-        res.status(400).send(err);
+        return res.status(400).send(err);
       }
     }
   }
   async postAmmoPurchase(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      const busboy = Busboy({headers:req.headers});
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PostErrorStr});
+      }
       let model = new AmmoPurchase();
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
       busboy.on('finish', async ()=>{
@@ -200,7 +229,7 @@ class ArmoryServer{
           model = await AmmoPurchase.new(model.Ammo,model.Vendor,model.Rounds,model.Price,model.DatePurchased,model.DateReceived);
           return res.send(model._buildPublicObj());
         }catch(err){
-          res.status(400).send(err.message)
+          return res.status(400).send(err.message)
         }
       });
       return req.pipe(busboy);
@@ -253,7 +282,12 @@ class ArmoryServer{
   }
   async postCaliber(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      const busboy = Busboy({headers:req.headers});
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PostErrorStr});
+      }
       let model = new Caliber();
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
       busboy.on('finish', async ()=>{
@@ -264,8 +298,13 @@ class ArmoryServer{
     }
   }
   async putCaliber(req,res,next){
-    const busboy = Busboy({headers:req.headers});
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PutErrorStr});
+      }
       try{
         let model = await new Caliber(req.params.id)._build();
         busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
@@ -303,12 +342,17 @@ class ArmoryServer{
   async getAllManufacturer(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
       let record = new Manufacturer();
-      res.send(await record.getAll());
+      return res.send(await record.getAll());
     }
   }
   async postManufacturer(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      const busboy = Busboy({headers:req.headers});
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PostErrorStr});
+      }
       let model = new Manufacturer();
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
       busboy.on('finish', async ()=>{
@@ -319,8 +363,13 @@ class ArmoryServer{
     }
   }
   async putManufacturer(req,res,next){
-    const busboy = Busboy({headers:req.headers});
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PutErrorStr});
+      }
       try{
         let model = await new Manufacturer(req.params.id)._build();
         busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
@@ -363,7 +412,12 @@ class ArmoryServer{
   }
   async postShoot(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      const busboy = Busboy({headers:req.headers});
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PostErrorStr});
+      }
       let model = new Shoot();
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
       busboy.on('finish', async ()=>{
@@ -379,8 +433,13 @@ class ArmoryServer{
   }
   async putShoot(req,res,next){
     //if rounds != ammoObj.rounds, update it.
-    const busboy = Busboy({headers:req.headers});
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PutErrorStr});
+      }
       try{
         let model = await new Shoot(req.params.id)._build();
         busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
@@ -390,7 +449,7 @@ class ArmoryServer{
         });
         return req.pipe(busboy);
       }catch(err){
-        res.status(400).send(err);
+        return res.status(400).send(err);
       }
     }
   }
@@ -424,7 +483,12 @@ class ArmoryServer{
   }
   async postVendor(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      const busboy = Busboy({headers:req.headers});
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PostErrorStr});
+      }
       let model = new Vendor();
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
       busboy.on('finish', async ()=>{
@@ -435,8 +499,13 @@ class ArmoryServer{
     }
   }
   async putVendor(req,res,next){
-    const busboy = Busboy({headers:req.headers});
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PutErrorStr});
+      }
       try{
         let model = await new Vendor(req.params.id)._build();
         busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
@@ -446,7 +515,7 @@ class ArmoryServer{
         });
         return req.pipe(busboy);
       }catch(err){
-        res.status(400).send(err);
+        return res.status(400).send(err);
       }
     }
   }
@@ -474,7 +543,13 @@ class ArmoryServer{
   async postTargetImage(req,res,next){
     let model = new TargetImage();
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      const busboy = Busboy({headers:req.headers,limits:{files:1}});
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers,limits:{files:1}});
+      }catch(err){
+        res.status(400).send({error:ArmoryServer.PostErrorStr});
+        return;
+      }
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
       busboy.on('file',(fieldname,file,filename,encoding,mimetype)=>{
         let chunks = [];

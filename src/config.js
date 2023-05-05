@@ -24,7 +24,7 @@ module.exports = {
     DBPASS:'',
   },
   production:{
-    PORT:9912,
+    PORT:8420,
     SSLCERTPATH:'/etc/apache2/certs/fullchain.pem',
     SSLKEYPATH:'/etc/apache2/certs/privkey.pem',
     ACCNTHOST:'api.outlawdesigns.io',

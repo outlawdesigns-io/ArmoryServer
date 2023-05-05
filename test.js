@@ -11,7 +11,7 @@ async function main(){
  //console.log(purchase);
  //console.log(await AmmoPurchase.getAwaitingReceipt());
  //let img = await new TargetImage(2)._build();
-console.log(img);
+ //console.log(img);
 }
 
 main().catch((err) => {

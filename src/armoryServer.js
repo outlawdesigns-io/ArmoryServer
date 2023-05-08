@@ -23,7 +23,16 @@ class ArmoryServer{
       throw {error:'Token not present'};
     }
     return new Promise((resolve,reject)=>{
-      let options = {};
+      let options = {
+        hostname:global.config[process.env.NODE_ENV].ACCNTHOST,
+        port:global.config[process.env.NODE_ENV].ACCNTPORT,
+        path:global.config[process.env.NODE_ENV].ACCNTVERIFYEND,
+        method:'GET',
+        headers:{
+          'Content-Type':'application/json; charset=utf-8',
+          'auth_token':auth_token,
+        }
+      };
       let req = http.request(options,(response)=>{
         let data = '';
         response.on('data',(chunk)=>{ data += chunk });

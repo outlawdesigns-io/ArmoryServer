@@ -12,14 +12,14 @@ class Shoot extends Record{
     const primaryKey = 'Id';
     super(database,table,primaryKey,id);
     this.publicKeys = [
-      'Id','FireArm','Ammo','Rounds','Created'
+      'Id','FireArm','Ammo','Rounds','Distance_Ft','Created'
     ];
   }
   static delete(targetId){
     let obj = new Shoot();
     return obj.db.table(obj.table).delete().where(obj.primaryKey + ' = ' + targetId).execute();
   }
-  static async new(firearmId, ammoId,rounds){
+  static async new(firearmId, ammoId, rounds, distance_ft){
     let firearm;
     let ammo;
     let shoot = new Shoot();
@@ -34,6 +34,7 @@ class Shoot extends Record{
     shoot.FireArm = firearmId;
     shoot.Ammo = ammoId;
     shoot.Rounds = rounds;
+    shoot.Distance_Ft = distance_ft;
     shoot.Created = shoot.db.date();
     return await shoot._create();
   }

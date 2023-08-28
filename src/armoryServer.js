@@ -431,7 +431,7 @@ class ArmoryServer{
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
       busboy.on('finish', async ()=>{
         try{
-          model = await Shoot.new(model.FireArm,model.Ammo,model.Rounds);
+          model = await Shoot.new(model.FireArm,model.Ammo,model.Rounds, model.Distance_Ft);
           return res.send(model._buildPublicObj());
         }catch(err){
           return res.status(400).send(err.message);

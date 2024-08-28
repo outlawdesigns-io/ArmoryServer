@@ -75,6 +75,12 @@ app.get('/vendor/:id',armoryServer.getVendor);
 app.put('/vendor/:id',armoryServer.putVendor);
 app.delete('/vendor/:id',armoryServer.deleteVendor);
 
+app.get('/optic',armoryServer.getAllOptic);
+app.post('/optic',armoryServer.postOptic);
+app.get('/optic/:id',armoryServer.getOptic);
+app.put('/optic/:id',armoryServer.putOptic);
+app.delete('/optic/:id',armoryServer.deleteOptic);
+
 app.get('/target/:id',armoryServer.getTargetImage);
 
 

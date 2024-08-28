@@ -10,7 +10,7 @@ class Firearm extends Record{
     const primaryKey = 'Id';
     super(database,table,primaryKey,id);
     this.publicKeys = [
-      'Id','Manufacturer','Caliber','Model','Serial_Number'
+      'Id','Manufacturer','Caliber','Model','Serial_Number', 'CurrentOptic', 'LinkToProduct'
     ];
   }
   static delete(targetId){

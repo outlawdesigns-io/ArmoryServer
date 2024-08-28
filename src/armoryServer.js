@@ -12,8 +12,17 @@ const Manufacturer = require('./models/manufacturer');
 const Shoot = require('./models/shoot');
 const Vendor = require('./models/vendor');
 const TargetImage = require('./models/targetImage');
+const Optic = require('./models/optic');
 
 //const fs = require('fs');
+
+/*
+almost all get, getAll, post, put, and delete methods are exactly the same
+except for the object being handled.
+If you were really clever, you'd abstract these into one method for each
+that accepts an ObjectType as a parameter
+
+*/
 
 class ArmoryServer{
   static PostErrorStr = 'POSTs must be made as multipart/form-data';
@@ -431,7 +440,7 @@ class ArmoryServer{
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
       busboy.on('finish', async ()=>{
         try{
-          model = await Shoot.new(model.FireArm,model.Ammo,model.Rounds, model.Distance_Ft);
+          model = await Shoot.new(model.FireArm,model.Ammo,model.Rounds, model.Distance_Ft, model.Optic);
           return res.send(model._buildPublicObj());
         }catch(err){
           return res.status(400).send(err.message);
@@ -532,6 +541,71 @@ class ArmoryServer{
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
       try{
         await Vendor.delete(req.params.id);
+        return res.send({message:'Target Object Deleted',id:req.params.id});
+      }catch(err){
+        return res.status(400).send(err);
+      }
+    }
+  }
+  async getOptic(req,res,next){
+    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      try{
+        let record = new Optic(req.params.id);
+        await record._build();
+        return res.send(record._buildPublicObj());
+      }catch(err){
+        return res.status(404).send('Not Found');
+      }
+    }
+  }
+  async getAllOptic(req,res,next){
+    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let record = new Optic();
+      res.send(await record.getAll());
+    }
+  }
+  async postOptic(req,res,next){
+    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PostErrorStr});
+      }
+      let model = new Optic();
+      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
+      busboy.on('finish', async ()=>{
+        model = await model._create().catch(console.error);
+        return res.send(model._buildPublicObj());
+      });
+      return req.pipe(busboy);
+    }
+  }
+  async putOptic(req,res,next){
+    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PutErrorStr});
+      }
+      try{
+        let model = await new Optic(req.params.id)._build();
+        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
+        busboy.on('finish',async ()=>{
+          model = await model._update();
+          return res.send(model._buildPublicObj());
+        });
+        return req.pipe(busboy);
+      }catch(err){
+        return res.status(400).send(err);
+      }
+    }
+  }
+  async deleteOptic(req,res,next){
+    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      try{
+        await Optic.delete(req.params.id);
         return res.send({message:'Target Object Deleted',id:req.params.id});
       }catch(err){
         return res.status(400).send(err);

@@ -573,10 +573,14 @@ class ArmoryServer{
         return res.status(400).send({error:ArmoryServer.PostErrorStr});
       }
       let model = new Optic();
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
+      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == 'null' ? null:val; });
       busboy.on('finish', async ()=>{
-        model = await model._create().catch(console.error);
-        return res.send(model._buildPublicObj());
+        try{
+          model = await model._create();
+          return res.send(model._buildPublicObj());
+        }catch(err){
+          return res.status(400).send({error:err});
+        }
       });
       return req.pipe(busboy);
     }

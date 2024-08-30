@@ -14,19 +14,20 @@ const Vendor = require('./models/vendor');
 const TargetImage = require('./models/targetImage');
 const Optic = require('./models/optic');
 
+const ModelFactory = require('./modelFactory');
+
 //const fs = require('fs');
 
 /*
-almost all get, getAll, post, put, and delete methods are exactly the same
-except for the object being handled.
-If you were really clever, you'd abstract these into one method for each
-that accepts an ObjectType as a parameter
+currently can't put shoots from the client. If you implement this in the future,
+consider applying this logic: "if rounds != ammoObj.rounds, update it".
 
 */
 
 class ArmoryServer{
   static PostErrorStr = 'POSTs must be made as multipart/form-data';
   static PutErrorStr = 'PUTs must be made as multipart/form-data';
+  static NullStr = 'null';
   static verifyToken(auth_token){
     if(auth_token === undefined){
       throw {error:'Token not present'};
@@ -64,202 +65,87 @@ class ArmoryServer{
     }
     return true;
   }
-  async getFirearm(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        let record = new Firearm(req.params.id);
-        await record._build();
-        return res.send(record._buildPublicObj());
-      }catch(err){
-        return res.status(404).send('Not Found');
-      }
-    }
-  }
-  async getAllFirearm(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let record = new Firearm();
-      res.send(await record.getAll());
-    }
-  }
-  async putFirearm(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PutErrorStr});
-      }
-      try{
-        let model = await new Firearm(req.params.id)._build();
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
-        busboy.on('finish',async ()=>{
-          model = await model._update();
-          return res.send(model._buildPublicObj());
-        });
-        return req.pipe(busboy);
-      }catch(err){
-        res.status(400).send(err);
-      }
-    }
-  }
-  async postFirearm(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PostErrorStr});
-      }
-      let model = new Firearm();
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
-      busboy.on('finish', async ()=>{
-        model = await model._create().catch(console.error);
-        return res.send(model._buildPublicObj());
-      });
-      return req.pipe(busboy);
-    }
-  }
-  async deleteFirearm(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        await Firearm.delete(req.params.id);
-        return res.send({message:'Target Object Deleted',id:req.params.id});
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async getAmmo(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        let record = new Ammo(req.params.id);
-        await record._build();
-        return res.send(record._buildPublicObj());
-      }catch(err){
-        return res.status(404).send('Not Found');
-      }
-    }
-  }
-  async getAllAmmo(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let record = new Ammo();
-      res.send(await record.getAll());
-    }
-  }
-  async putAmmo(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PutErrorStr});
-      }
-      try{
-        let model = await new Ammo(req.params.id)._build();
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
-        busboy.on('finish',async ()=>{
-          model = await model._update();
-          return res.send(model._buildPublicObj());
-        });
-        return req.pipe(busboy);
-      }catch(err){
-        res.status(400).send(err);
-      }
-    }
-  }
-  async postAmmo(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PostErrorStr});
-      }
-      let model = new Ammo();
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
-      busboy.on('finish', async ()=>{
-        model = await model._create().catch(console.error);
-        return res.send(model._buildPublicObj());
-      });
-      return req.pipe(busboy);
-    }
-  }
-  async deleteAmmo(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        await Ammo.delete(req.params.id);
-        return res.send({message:'Target Object Deleted',id:req.params.id});
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async getAmmoPurchase(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        let record = new AmmoPurchase(req.params.id);
-        await record._build();
-        return res.send(record._buildPublicObj());
-      }catch(err){
-        return res.status(404).send('Not Found');
-      }
-    }
-  }
-  async getAllAmmoPurchase(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let record = new AmmoPurchase();
-      return res.send(await record.getAll());
-    }
-  }
-  async putAmmoPurchase(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PutErrorStr});
-      }
-      try{
-        let model = await new AmmoPurchase(req.params.id)._build();
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
-        busboy.on('finish',async ()=>{
-          model = await model._update();
-          return res.send(model._buildPublicObj());
-        });
-        return req.pipe(busboy);
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async postAmmoPurchase(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PostErrorStr});
-      }
-      let model = new AmmoPurchase();
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
-      busboy.on('finish', async ()=>{
+  getModel(modelStr){
+    return async(req,res,next)=>{
+      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
         try{
-          model = await AmmoPurchase.new(model.Ammo,model.Vendor,model.Rounds,model.Price,model.DatePurchased,model.DateReceived);
-          return res.send(model._buildPublicObj());
+          let record = ModelFactory.get(modelStr,req.params.id);
+          await record._build();
+          return res.send(record.getPublicProperties());
         }catch(err){
-          return res.status(400).send(err.message)
+          return res.status(404).send('Not Found');
         }
-      });
-      return req.pipe(busboy);
+      }
     }
   }
-  async deleteAmmoPurchase(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        await AmmoPurchase.delete(req.params.id);
-        return res.send({message:'Target Object Deleted',id:req.params.id});
-      }catch(err){
-        return res.status(400).send(err.message);
+  getAll(modelStr){
+    return async(req,res,next)=>{
+      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+        try{
+          let model = ModelFactory.get(modelStr);
+          return res.send(await model.getAll());
+        }catch(err){
+          return res.status(400).send(err);
+        }
+      }
+    }
+  }
+  deleteModel(modelStr){
+    return async(req,res,next)=>{
+      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+        try{
+          let modelClass = ModelFactory.getClass(modelStr);
+          await modelClass.delete(req.params.id);
+          return res.send({message:'Target Object Deleted',id:req.params.id});
+        }catch(err){
+          return res.status(400).send(err);
+        }
+      }
+    }
+  }
+  postModel(modelStr){
+    return async(req,res,next)=>{
+      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+        let busboy;
+        try{
+          busboy = Busboy({headers:req.headers});
+        }catch(err){
+          return res.status(400).send({error:ArmoryServer.PostErrorStr});
+        }
+        let model = ModelFactory.get(modelStr);
+        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val; });
+        busboy.on('finish', async ()=>{
+          try{
+            model = await model.create();
+            return res.send(model.getPublicProperties());
+          }catch(err){
+            return res.status(400).send({error:err});
+          }
+        });
+        return req.pipe(busboy);
+      }
+    }
+  }
+  putModel(modelStr){
+    return async(req,res,next) => {
+      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+        let busboy;
+        try{
+          busboy = Busboy({headers:req.headers});
+        }catch(err){
+          return res.status(400).send({error:ArmoryServer.PutErrorStr});
+        }
+        try{
+          let model = await ModelFactory.get(modelStr,req.params.id).init();
+          busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val;});
+          busboy.on('finish',async ()=>{
+            model = await model.update();
+            return res.send(model.getPublicProperties());
+          });
+          return req.pipe(busboy);
+        }catch(err){
+          res.status(400).send(err);
+        }
       }
     }
   }
@@ -278,352 +164,6 @@ class ArmoryServer{
         return res.send(await AmmoPurchase.getAwaitingReceipt());
       }catch(err){
         return res.status(400).send(err.message);
-      }
-    }
-  }
-  async getCaliber(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        let record = new Caliber(req.params.id);
-        await record._build();
-        return res.send(record._buildPublicObj());
-      }catch(err){
-        return res.status(404).send('Not Found');
-      }
-    }
-  }
-  async getAllCaliber(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let record = new Caliber();
-      res.send(await record.getAll());
-    }
-  }
-  async postCaliber(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PostErrorStr});
-      }
-      let model = new Caliber();
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
-      busboy.on('finish', async ()=>{
-        model = await model._create().catch(console.error);
-        return res.send(model._buildPublicObj());
-      });
-      return req.pipe(busboy);
-    }
-  }
-  async putCaliber(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PutErrorStr});
-      }
-      try{
-        let model = await new Caliber(req.params.id)._build();
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
-        busboy.on('finish',async ()=>{
-          model = await model._update();
-          return res.send(model._buildPublicObj());
-        });
-        return req.pipe(busboy);
-      }catch(err){
-        res.status(400).send(err);
-      }
-    }
-  }
-  async deleteCaliber(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        await Caliber.delete(req.params.id);
-        return res.send({message:'Target Object Deleted',id:req.params.id});
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async getManufacturer(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        let record = new Manufacturer(req.params.id);
-        await record._build();
-        return res.send(record._buildPublicObj());
-      }catch(err){
-        return res.status(404).send('Not Found');
-      }
-    }
-  }
-  async getAllManufacturer(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let record = new Manufacturer();
-      return res.send(await record.getAll());
-    }
-  }
-  async postManufacturer(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PostErrorStr});
-      }
-      let model = new Manufacturer();
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
-      busboy.on('finish', async ()=>{
-        model = await model._create().catch(console.error);
-        return res.send(model._buildPublicObj());
-      });
-      return req.pipe(busboy);
-    }
-  }
-  async putManufacturer(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PutErrorStr});
-      }
-      try{
-        let model = await new Manufacturer(req.params.id)._build();
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
-        busboy.on('finish',async ()=>{
-          model = await model._update();
-          return res.send(model._buildPublicObj());
-        });
-        return req.pipe(busboy);
-      }catch(err){
-        res.status(400).send(err);
-      }
-    }
-  }
-  async deleteManufacturer(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        await Manufacturer.delete(req.params.id);
-        return res.send({message:'Target Object Deleted',id:req.params.id});
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async getShoot(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        let record = new Shoot(req.params.id);
-        await record._build();
-        return res.send(record._buildPublicObj());
-      }catch(err){
-        return res.status(404).send('Not Found');
-      }
-    }
-  }
-  async getAllShoot(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let record = new Shoot();
-      res.send(await record.getAll());
-    }
-  }
-  async postShoot(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PostErrorStr});
-      }
-      let model = new Shoot();
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
-      busboy.on('finish', async ()=>{
-        try{
-          model = await Shoot.new(model.FireArm,model.Ammo,model.Rounds, model.Distance_Ft, model.Optic);
-          return res.send(model._buildPublicObj());
-        }catch(err){
-          return res.status(400).send(err.message);
-        }
-      });
-      return req.pipe(busboy);
-    }
-  }
-  async putShoot(req,res,next){
-    //if rounds != ammoObj.rounds, update it.
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PutErrorStr});
-      }
-      try{
-        let model = await new Shoot(req.params.id)._build();
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
-        busboy.on('finish',async ()=>{
-          model = await model._update();
-          return res.send(model._buildPublicObj());
-        });
-        return req.pipe(busboy);
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async deleteShoot(req,res,next){
-    //add rounds back to ammoObj.rounds
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        await Shoot.delete(req.params.id);
-        return res.send({message:'Target Object Deleted',id:req.params.id});
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async getVendor(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        let record = new Vendor(req.params.id);
-        await record._build();
-        return res.send(record._buildPublicObj());
-      }catch(err){
-        return res.status(404).send('Not Found');
-      }
-    }
-  }
-  async getAllVendor(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let record = new Vendor();
-      res.send(await record.getAll());
-    }
-  }
-  async postVendor(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PostErrorStr});
-      }
-      let model = new Vendor();
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
-      busboy.on('finish', async ()=>{
-        model = await model._create().catch(console.error);
-        return res.send(model._buildPublicObj());
-      });
-      return req.pipe(busboy);
-    }
-  }
-  async putVendor(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PutErrorStr});
-      }
-      try{
-        let model = await new Vendor(req.params.id)._build();
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
-        busboy.on('finish',async ()=>{
-          model = await model._update();
-          return res.send(model._buildPublicObj());
-        });
-        return req.pipe(busboy);
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async deleteVendor(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        await Vendor.delete(req.params.id);
-        return res.send({message:'Target Object Deleted',id:req.params.id});
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async getOptic(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        let record = new Optic(req.params.id);
-        await record._build();
-        return res.send(record._buildPublicObj());
-      }catch(err){
-        return res.status(404).send('Not Found');
-      }
-    }
-  }
-  async getAllOptic(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let record = new Optic();
-      res.send(await record.getAll());
-    }
-  }
-  async postOptic(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PostErrorStr});
-      }
-      let model = new Optic();
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == 'null' ? null:val; });
-      busboy.on('finish', async ()=>{
-        try{
-          model = await model._create();
-          return res.send(model._buildPublicObj());
-        }catch(err){
-          return res.status(400).send({error:err});
-        }
-      });
-      return req.pipe(busboy);
-    }
-  }
-  async putOptic(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers});
-      }catch(err){
-        return res.status(400).send({error:ArmoryServer.PutErrorStr});
-      }
-      try{
-        let model = await new Optic(req.params.id)._build();
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val;});
-        busboy.on('finish',async ()=>{
-          model = await model._update();
-          return res.send(model._buildPublicObj());
-        });
-        return req.pipe(busboy);
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async deleteOptic(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        await Optic.delete(req.params.id);
-        return res.send({message:'Target Object Deleted',id:req.params.id});
-      }catch(err){
-        return res.status(400).send(err);
-      }
-    }
-  }
-  async getTargetImage(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      try{
-        let record = new TargetImage(req.params.id);
-        await record._build();
-        return res.send(record._buildPublicObj());
-      }catch(err){
-        return res.status(404).send('Not Found');
       }
     }
   }
@@ -649,8 +189,8 @@ class ArmoryServer{
           try{
             insert.ShootId = model.ShootId;
             insert.BinaryData = result.toString('base64');
-            await insert._create();
-            res.send(insert._buildPublicObj());
+            await insert.create();
+            res.send(insert.getPublicProperties());
           }catch(err){
             res.status(400).send(err.message);
           }

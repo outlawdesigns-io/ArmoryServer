@@ -22,8 +22,8 @@ class TargetImage extends Record{
     let purchase = new TargetImage();
     let ids = await purchase.db.table(purchase.table).select(purchase.primaryKey).where('ShootId = ' + shootId).execute();
     for(let id in ids){
-      let obj = await new TargetImage(ids[id][purchase.primaryKey])._build();
-      records.push(obj._buildPublicObj());
+      let obj = await new TargetImage(ids[id][purchase.primaryKey]).init();
+      records.push(obj.getPublicProperties());
     }
     return records;
   }
@@ -31,8 +31,8 @@ class TargetImage extends Record{
     let records = [];
     let ids = await this._getAll();
     for(let id in ids){
-      let obj = await new TargetImage(ids[id][this.primaryKey])._build();
-      records.push(obj._buildPublicObj());
+      let obj = await new TargetImage(ids[id][this.primaryKey]).init();
+      records.push(obj.getPublicProperties());
     }
     return records;
   }

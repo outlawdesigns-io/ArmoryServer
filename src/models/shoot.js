@@ -24,10 +24,10 @@ class Shoot extends Record{
     let ammo;
     let shoot = new Shoot();
     try{
-      firearm = await new Firearm(firearmId)._build(); //validate firarmId
-      ammo = await new Ammo(ammoId)._build();
+      firearm = await new Firearm(firearmId).init(); //validate firarmId
+      ammo = await new Ammo(ammoId).init();
       ammo.Rounds -= rounds;
-      await ammo._update();
+      await ammo.update();
     }catch(err){
       throw err;
     }
@@ -37,14 +37,14 @@ class Shoot extends Record{
     shoot.Distance_Ft = distance_ft;
     shoot.Optic = optic;
     shoot.Created = shoot.db.date();
-    return await shoot._create();
+    return await shoot.create();
   }
   async getAll(){
     let records = [];
     let ids = await this._getAll();
     for(let id in ids){
-      let obj = await new Shoot(ids[id][this.primaryKey])._build();
-      records.push(obj._buildPublicObj());
+      let obj = await new Shoot(ids[id][this.primaryKey]).init();
+      records.push(obj.getPublicProperties());
     }
     return records;
   }

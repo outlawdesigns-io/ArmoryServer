@@ -4,6 +4,8 @@ const Shoot = require('./src/models/shoot');
 const AmmoPurchase = require('./src/models/ammopurchase');
 const TargetImage = require('./src/models/TargetImage');
 
+const ModelFactory = require('./src/modelFactory');
+
 async function main(){
  //let shoot = await Shoot.new(2,4,120);
  //let purchase = await AmmoPurchase.new(1,1,100,99.99,'4/1/2023');
@@ -12,6 +14,9 @@ async function main(){
  //console.log(await AmmoPurchase.getAwaitingReceipt());
  //let img = await new TargetImage(2)._build();
  //console.log(img);
+ const model = ModelFactory.get('ammopurchase',12);
+ await model._build();
+ console.log(model._buildPublicObj());
 }
 
 main().catch((err) => {

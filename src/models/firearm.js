@@ -21,8 +21,8 @@ class Firearm extends Record{
     let records = [];
     let ids = await this._getAll();
     for(let id in ids){
-      let obj = await new Firearm(ids[id][this.primaryKey])._build();
-      records.push(obj._buildPublicObj());
+      let obj = await new Firearm(ids[id][this.primaryKey]).init();
+      records.push(obj.getPublicProperties());
     }
     return records;
   }

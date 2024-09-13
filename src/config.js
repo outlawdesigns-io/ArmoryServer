@@ -10,6 +10,7 @@ module.exports = {
     DBUSER:'root',
     DBHOST:'localhost',
     DBPASS:'',
+    DB_DB:'Armory_Test',
   },
   testing:{
     PORT:9912,
@@ -22,6 +23,7 @@ module.exports = {
     DBUSER:'root',
     DBHOST:'localhost',
     DBPASS:'',
+    DB_DB:'Armory_Test',
   },
   production:{
     PORT:8420,
@@ -34,5 +36,6 @@ module.exports = {
     DBUSER:'root',
     DBHOST:'localhost',
     DBPASS:'',
+    DB_DB:'Armory',
   }
 };

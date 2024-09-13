@@ -5,7 +5,7 @@ const Record = require('outlawdesigns.io.noderecord');
 class Firearm extends Record{
 
   constructor(id){
-    const database = process.env.NODE_ENV == 'production' ? 'Armory':'Armory_Test';
+    const database = global.config[process.env.NODE_ENV].DB_DB;
     const table = 'Firearm';
     const primaryKey = 'Id';
     super(database,table,primaryKey,id);

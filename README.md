@@ -2,8 +2,7 @@
 
 ## Preamble
 
-This service
-This service can be used to build reports or client applications in any language that supports making http calls.
+`Armory` is a firearm/ammunition inventory management system. It is intended to provide users with a digital solution for organizing their firearm collection, and maintaining an accurate ammunition inventory. This [expressJS](https://expressjs.com/) back-end implementation provides the user an interface for creating and managing firearm related objects and relationships between them over http(s). It can be used to build reports or client applications in any language that supports making http calls. See [ArmoryVue](https://github.com/outlawdesigns-io/ArmoryVue) for an example client application.
 
 ## Meta
 

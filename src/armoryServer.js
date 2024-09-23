@@ -73,7 +73,7 @@ class ArmoryServer{
           await record._build();
           return res.send(record.getPublicProperties());
         }catch(err){
-          return res.status(404).send('Not Found');
+          return res.status(404).send({error:'Invalid UID'});
         }
       }
     }

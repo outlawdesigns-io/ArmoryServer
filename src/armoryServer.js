@@ -70,7 +70,7 @@ class ArmoryServer{
       if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
         try{
           let record = ModelFactory.get(modelStr,req.params.id);
-          await record._build();
+          await record.init();
           return res.send(record.getPublicProperties());
         }catch(err){
           return res.status(404).send({error:'Invalid UID'});

@@ -26,6 +26,10 @@ class Optic extends Record{
     }
     return records;
   }
+  static truncate(){
+    let obj = new Optic();
+    return obj.db.table(obj.table).truncate().execute();
+  }
 }
 
 module.exports = Optic;

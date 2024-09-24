@@ -98,3 +98,5 @@ if(process.env.NODE_ENV !== 'production'){
     console.log(process.env.NODE_ENV + ' mode listening on port: ' + global.config[process.env.NODE_ENV].PORT);
   });
 }
+
+module.exports = app; // makes the server available for testing

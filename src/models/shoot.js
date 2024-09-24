@@ -48,6 +48,10 @@ class Shoot extends Record{
     }
     return records;
   }
+  static truncate(){
+    let obj = new Shoot();
+    return obj.db.table(obj.table).truncate().execute();
+  }
 }
 
 module.exports = Shoot;

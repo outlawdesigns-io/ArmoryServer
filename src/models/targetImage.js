@@ -36,6 +36,10 @@ class TargetImage extends Record{
     }
     return records;
   }
+  static truncate(){
+    let obj = new TargetImage();
+    return obj.db.table(obj.table).truncate().execute();
+  }
 }
 
 module.exports = TargetImage;

@@ -26,6 +26,10 @@ class Manufacturer extends Record{
     }
     return records;
   }
+  static truncate(){
+    let obj = new Manufacturer();
+    return obj.db.table(obj.table).truncate().execute();
+  }
 }
 
 module.exports = Manufacturer;

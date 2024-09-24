@@ -42,7 +42,8 @@ class AmmoPurchase extends Record{
     return await purchase.create();
   }
   static async receive(purchaseId){
-    //todo reject if DateReceived is already populated.
+    //todo: reject if DateReceived is already populated.
+    //todo: ammo doesn't exist gets caught, but doesn't seem to bubble all the way up. 
     let purchase;
     let ammo;
     try{
@@ -75,6 +76,10 @@ class AmmoPurchase extends Record{
       records.push(obj.getPublicProperties());
     }
     return records;
+  }
+  static truncate(){
+    let obj = new AmmoPurchase();
+    return obj.db.table(obj.table).truncate().execute();
   }
 }
 

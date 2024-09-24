@@ -26,6 +26,10 @@ class Ammo extends Record{
     }
     return records;
   }
+  static truncate(){
+    let obj = new Ammo();
+    return obj.db.table(obj.table).truncate().execute();
+  }
 }
 
 module.exports = Ammo;

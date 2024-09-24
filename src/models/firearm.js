@@ -26,6 +26,10 @@ class Firearm extends Record{
     }
     return records;
   }
+  static truncate(){
+    let obj = new Firearm();
+    return obj.db.table(obj.table).truncate().execute();
+  }
 }
 
 module.exports = Firearm;

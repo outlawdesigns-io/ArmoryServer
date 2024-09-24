@@ -26,6 +26,10 @@ class Vendor extends Record{
     }
     return records;
   }
+  static truncate(){
+    let obj = new Vendor();
+    return obj.db.table(obj.table).truncate().execute();
+  }
 }
 
 module.exports = Vendor;

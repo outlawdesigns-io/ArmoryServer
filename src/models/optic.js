@@ -13,23 +13,6 @@ class Optic extends Record{
       'Id','Manufacturer', 'Name', 'MagnificationTimes', 'LinkToProduct'
     ];
   }
-  static delete(targetId){
-    let obj = new Optic();
-    return obj.db.table(obj.table).delete().where(obj.primaryKey + ' = ' + targetId).execute();
-  }
-  async getAll(){
-    let records = [];
-    let ids = await this._getAll();
-    for(let id in ids){
-      let obj = await new Optic(ids[id][this.primaryKey]).init();
-      records.push(obj.getPublicProperties());
-    }
-    return records;
-  }
-  static truncate(){
-    let obj = new Optic();
-    return obj.db.table(obj.table).truncate().execute();
-  }
 }
 
 module.exports = Optic;

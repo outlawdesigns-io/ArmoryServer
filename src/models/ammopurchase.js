@@ -15,10 +15,6 @@ class AmmoPurchase extends Record{
       'Id','Ammo','Vendor','Rounds','Price','DatePurchased','DateReceived'
     ];
   }
-  static delete(targetId){
-    let obj = new AmmoPurchase();
-    return obj.db.table(obj.table).delete().where(obj.primaryKey + ' = ' + targetId).execute();
-  }
   static async new(ammoId,vendorId,rounds,price,datePurchased,dateReceived){
     let ammo;
     let vendor;
@@ -43,7 +39,7 @@ class AmmoPurchase extends Record{
   }
   static async receive(purchaseId){
     //todo: reject if DateReceived is already populated.
-    //todo: ammo doesn't exist gets caught, but doesn't seem to bubble all the way up. 
+    //todo: ammo doesn't exist gets caught, but doesn't seem to bubble all the way up.
     let purchase;
     let ammo;
     try{
@@ -58,15 +54,6 @@ class AmmoPurchase extends Record{
       throw err;
     }
   }
-  async getAll(){
-    let records = [];
-    let ids = await this._getAll();
-    for(let id in ids){
-      let obj = await new AmmoPurchase(ids[id][this.primaryKey]).init();
-      records.push(obj.getPublicProperties());
-    }
-    return records;
-  }
   static async getAwaitingReceipt(){
     let records = [];
     let purchase = new AmmoPurchase();
@@ -76,10 +63,6 @@ class AmmoPurchase extends Record{
       records.push(obj.getPublicProperties());
     }
     return records;
-  }
-  static truncate(){
-    let obj = new AmmoPurchase();
-    return obj.db.table(obj.table).truncate().execute();
   }
 }
 

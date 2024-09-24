@@ -82,9 +82,9 @@ class ArmoryServer{
     return async(req,res,next)=>{
       if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
         try{
-          let model = ModelFactory.get(modelStr);
-          return res.send(await model.getAll());
+          return res.send(await ModelFactory.getClass(modelStr).getAll());
         }catch(err){
+          console.log(err);
           return res.status(400).send(err);
         }
       }

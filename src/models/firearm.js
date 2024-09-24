@@ -13,23 +13,6 @@ class Firearm extends Record{
       'Id','Manufacturer','Caliber','Model','Serial_Number', 'CurrentOptic', 'LinkToProduct'
     ];
   }
-  static delete(targetId){
-    let obj = new Firearm();
-    return obj.db.table(obj.table).delete().where(obj.primaryKey + ' = ' + targetId).execute();
-  }
-  async getAll(){
-    let records = [];
-    let ids = await this._getAll();
-    for(let id in ids){
-      let obj = await new Firearm(ids[id][this.primaryKey]).init();
-      records.push(obj.getPublicProperties());
-    }
-    return records;
-  }
-  static truncate(){
-    let obj = new Firearm();
-    return obj.db.table(obj.table).truncate().execute();
-  }
 }
 
 module.exports = Firearm;

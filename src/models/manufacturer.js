@@ -13,23 +13,6 @@ class Manufacturer extends Record{
       'Id','Name','Website', 'Firearm', 'Ammo', 'Optic'
     ];
   }
-  static delete(targetId){
-    let obj = new Manufacturer();
-    return obj.db.table(obj.table).delete().where(obj.primaryKey + ' = ' + targetId).execute();
-  }
-  async getAll(){
-    let records = [];
-    let ids = await this._getAll();
-    for(let id in ids){
-      let obj = await new Manufacturer(ids[id][this.primaryKey]).init();
-      records.push(obj.getPublicProperties());
-    }
-    return records;
-  }
-  static truncate(){
-    let obj = new Manufacturer();
-    return obj.db.table(obj.table).truncate().execute();
-  }
 }
 
 module.exports = Manufacturer;

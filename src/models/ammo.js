@@ -13,23 +13,6 @@ class Ammo extends Record{
       'Id','Manufacturer','Caliber','BulletWeight','Casing','BulletType','MuzzleVelocity','Rounds'
     ];
   }
-  static delete(targetId){
-    let obj = new Ammo();
-    return obj.db.table(obj.table).delete().where(obj.primaryKey + ' = ' + targetId).execute();
-  }
-  async getAll(){
-    let records = [];
-    let ids = await this._getAll();
-    for(let id in ids){
-      let obj = await new Ammo(ids[id][this.primaryKey]).init();
-      records.push(obj.getPublicProperties());
-    }
-    return records;
-  }
-  static truncate(){
-    let obj = new Ammo();
-    return obj.db.table(obj.table).truncate().execute();
-  }
 }
 
 module.exports = Ammo;

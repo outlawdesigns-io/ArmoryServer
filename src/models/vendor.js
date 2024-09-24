@@ -13,23 +13,6 @@ class Vendor extends Record{
       'Id','Name','Website'
     ];
   }
-  static delete(targetId){
-    let obj = new Vendor();
-    return obj.db.table(obj.table).delete().where(obj.primaryKey + ' = ' + targetId).execute();
-  }
-  async getAll(){
-    let records = [];
-    let ids = await this._getAll();
-    for(let id in ids){
-      let obj = await new Vendor(ids[id][this.primaryKey]).init();
-      records.push(obj.getPublicProperties());
-    }
-    return records;
-  }
-  static truncate(){
-    let obj = new Vendor();
-    return obj.db.table(obj.table).truncate().execute();
-  }
 }
 
 module.exports = Vendor;

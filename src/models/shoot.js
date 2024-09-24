@@ -15,10 +15,6 @@ class Shoot extends Record{
       'Id','FireArm','Ammo','Rounds','Distance_Ft','Created', 'Optic'
     ];
   }
-  static delete(targetId){
-    let obj = new Shoot();
-    return obj.db.table(obj.table).delete().where(obj.primaryKey + ' = ' + targetId).execute();
-  }
   static async new(firearmId, ammoId, rounds, distance_ft, optic){
     let firearm;
     let ammo;
@@ -38,19 +34,6 @@ class Shoot extends Record{
     shoot.Optic = optic;
     shoot.Created = shoot.db.date();
     return await shoot.create();
-  }
-  async getAll(){
-    let records = [];
-    let ids = await this._getAll();
-    for(let id in ids){
-      let obj = await new Shoot(ids[id][this.primaryKey]).init();
-      records.push(obj.getPublicProperties());
-    }
-    return records;
-  }
-  static truncate(){
-    let obj = new Shoot();
-    return obj.db.table(obj.table).truncate().execute();
   }
 }
 

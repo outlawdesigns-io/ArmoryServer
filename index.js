@@ -33,6 +33,7 @@ app.post('/firearm',armoryServer.postModel("firearm"));
 app.get('/firearm/:id',armoryServer.getModel("firearm"));
 app.put('/firearm/:id',armoryServer.putModel("firearm"));
 app.delete('/firearm/:id',armoryServer.deleteModel("firearm"));
+app.post('/firearm/:id/image',armoryServer.postImage('firearmimage'));
 
 app.get('/ammo',armoryServer.getAll("ammo"));
 app.post('/ammo',armoryServer.postModel("ammo"));
@@ -66,7 +67,7 @@ app.post('/shoot',armoryServer.postModel("shoot"));
 app.get('/shoot/:id',armoryServer.getModel("shoot"));
 app.put('/shoot/:id',armoryServer.putModel("shoot"));
 app.delete('/shoot/:id',armoryServer.deleteModel("shoot"));
-app.post('/shoot/:id/target',armoryServer.postTargetImage);
+app.post('/shoot/:id/target',armoryServer.postImage('target'));
 app.get('/shoot/:id/target',armoryServer.getShootImages);
 
 app.get('/vendor',armoryServer.getAll("vendor"));
@@ -82,6 +83,9 @@ app.put('/optic/:id',armoryServer.putModel("optic"));
 app.delete('/optic/:id',armoryServer.deleteModel("optic"));
 
 app.get('/target/:id',armoryServer.getModel("target"));
+app.get('/firearmimage/:id',armoryServer.getModel("firearmimage"));
+
+
 
 
 

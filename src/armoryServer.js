@@ -167,44 +167,45 @@ class ArmoryServer{
       }
     }
   }
-  async postTargetImage(req,res,next){
-    let model = new TargetImage();
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
-      try{
-        busboy = Busboy({headers:req.headers,limits:{files:1}});
-      }catch(err){
-        res.status(400).send({error:ArmoryServer.PostErrorStr});
-        return;
-      }
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
-      busboy.on('file',(fieldname,file,filename,encoding,mimetype)=>{
-        let chunks = [];
-        file.on('data',(chunk)=>{
-          chunks.push(chunk);
-        });
-        file.on('end',async ()=>{
-          let result = Buffer.concat(chunks);
-          let insert = new TargetImage();
-          try{
-            insert.ShootId = model.ShootId;
-            insert.BinaryData = result.toString('base64');
-            await insert.create();
-            res.send(insert.getPublicProperties());
-          }catch(err){
-            res.status(400).send(err.message);
-          }
-        });
-      });
-      return req.pipe(busboy);
-    }
-  }
   async getShootImages(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
       try{
         res.send(await TargetImage.getByShootId(req.params.id));
       }catch(err){
         res.status(404).send('Not Found');
+      }
+    }
+  }
+  postImage(modelStr){
+    return async(req,res,next) => {
+      let model = ModelFactory.get(modelStr);
+      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+        let busboy;
+        try{
+          busboy = Busboy({headers:req.headers,limits:{files:1}});
+        }catch(err){
+          res.status(400).send({error:ArmoryServer.PostErrorStr});
+          return;
+        }
+        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
+        busboy.on('file',(fieldname,file,filename,encoding,mimetype)=>{
+          let chunks = [];
+          file.on('data',(chunk)=>{
+            chunks.push(chunk);
+          });
+          file.on('end', async ()=>{
+            let results = Buffer.concat(chunks);
+            let insert = ModelFactory.get(modelStr);
+            try{
+              model.BinaryData = results.toString('base64');
+              await model.create();
+              res.send(model.getPublicProperties());
+            }catch(err){
+              res.status(400).send({error:err.message});
+            }
+          });
+        });
+        return req.pipe(busboy);
       }
     }
   }

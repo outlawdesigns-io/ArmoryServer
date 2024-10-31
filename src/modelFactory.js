@@ -7,6 +7,7 @@ const Shoot = require('./models/shoot');
 const Vendor = require('./models/vendor');
 const TargetImage = require('./models/targetImage');
 const Optic = require('./models/optic');
+const FirearmImage = require('./models/firearmImage');
 
 const models = {
   firearm: (id) => new Firearm(id),
@@ -17,7 +18,8 @@ const models = {
   shoot: (id) => new Shoot(id),
   vendor: (id) => new Vendor(id),
   optic: (id) => new Optic(id),
-  target: (id) => new TargetImage(id)
+  target: (id) => new TargetImage(id),
+  firearmimage: (id) => new FirearmImage(id)
 };
 const modelClasses = {
   firearm:Firearm,
@@ -28,7 +30,8 @@ const modelClasses = {
   shoot:Shoot,
   vendor:Vendor,
   optic:Optic,
-  target:TargetImage
+  target:TargetImage,
+  firearmimage:FirearmImage
 }
 
 module.exports = {

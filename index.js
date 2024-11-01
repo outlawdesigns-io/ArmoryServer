@@ -34,6 +34,7 @@ app.get('/firearm/:id',armoryServer.getModel("firearm"));
 app.put('/firearm/:id',armoryServer.putModel("firearm"));
 app.delete('/firearm/:id',armoryServer.deleteModel("firearm"));
 app.post('/firearm/:id/image',armoryServer.postImage('firearmimage'));
+app.get('/firearm/:id/image',armoryServer.getFirearmImages);
 
 app.get('/ammo',armoryServer.getAll("ammo"));
 app.post('/ammo',armoryServer.postModel("ammo"));

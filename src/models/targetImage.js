@@ -15,10 +15,10 @@ class TargetImage extends Record{
   }
   static async getByShootId(shootId){
     let records = [];
-    let purchase = new TargetImage();
-    let ids = await purchase.db.table(purchase.table).select(purchase.primaryKey).where('ShootId = ' + shootId).execute();
+    let model = new TargetImage();
+    let ids = await model.db.table(model.table).select(model.primaryKey).where('ShootId = ' + shootId).execute();
     for(let id in ids){
-      let obj = await new TargetImage(ids[id][purchase.primaryKey]).init();
+      let obj = await new TargetImage(ids[id][model.primaryKey]).init();
       records.push(obj.getPublicProperties());
     }
     return records;

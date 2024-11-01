@@ -170,7 +170,16 @@ class ArmoryServer{
   async getShootImages(req,res,next){
     if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
       try{
-        res.send(await TargetImage.getByShootId(req.params.id));
+        res.send(await ModelFactory.getClass('target').getByShootId(req.params.id));
+      }catch(err){
+        res.status(404).send('Not Found');
+      }
+    }
+  }
+  async getFirearmImages(req,res,next){
+    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      try{
+        res.send(await ModelFactory.getClass('firearmimage').getByFirearmId(req.params.id));
       }catch(err){
         res.status(404).send('Not Found');
       }

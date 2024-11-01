@@ -13,6 +13,16 @@ class FirearmImage extends Record{
       'Id','BinaryData','Firearm','Optic'
     ];
   }
+  static async getByFirearmId(firearmId){
+    let records = [];
+    let model = new FirearmImage();
+    let ids = await model.db.table(model.table).select(model.primaryKey).where('Firearm = ' + firearmId).execute();
+    for(let id in ids){
+      let obj = await new FirearmImage(ids[id][model.primaryKey]).init();
+      records.push(obj.getPublicProperties());
+    }
+    return records;
+  }
 }
 
 module.exports = FirearmImage;

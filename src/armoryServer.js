@@ -196,7 +196,7 @@ class ArmoryServer{
           res.status(400).send({error:ArmoryServer.PostErrorStr});
           return;
         }
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val; });
+        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val;});
         busboy.on('file',(fieldname,file,filename,encoding,mimetype)=>{
           let chunks = [];
           file.on('data',(chunk)=>{

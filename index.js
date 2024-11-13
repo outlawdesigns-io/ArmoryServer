@@ -84,8 +84,9 @@ app.put('/optic/:id',armoryServer.putModel("optic"));
 app.delete('/optic/:id',armoryServer.deleteModel("optic"));
 
 app.get('/target/:id',armoryServer.getModel("target"));
+app.delete('/target/:id',armoryServer.deleteModel("target"));
 app.get('/firearmimage/:id',armoryServer.getModel("firearmimage"));
-
+app.delete('/firearmimage/:id',armoryServer.deleteModel("firearmimage"));
 
 
 

@@ -126,6 +126,27 @@ class ArmoryServer{
       }
     }
   }
+  async postShoot(req,res,next){
+    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      let busboy;
+      try{
+        busboy = Busboy({headers:req.headers});
+      }catch(err){
+        return res.status(400).send({error:ArmoryServer.PostErrorStr});
+      }
+      let model = ModelFactory.get('shoot');
+      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val; });
+      busboy.on('finish',async ()=>{
+        try{
+          model = await ModelFactory.getClass('shoot').new(model.FireArm,model.Ammo,model.Rounds, model.Distance_Ft, model.Optic);
+          return res.send(model.getPublicProperties());
+        }catch(err){
+          return res.status(400).send({error:err});
+        }
+      });
+      return req.pipe(busboy);
+    }
+  }
   putModel(modelStr){
     return async(req,res,next) => {
       if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){

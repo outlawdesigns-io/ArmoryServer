@@ -64,7 +64,7 @@ app.put('/manufacturer/:id',armoryServer.putModel("manufacturer"));
 app.delete('/manufacturer/:id',armoryServer.deleteModel("manufacturer"));
 
 app.get('/shoot',armoryServer.getAll("shoot"));
-app.post('/shoot',armoryServer.postModel("shoot"));
+app.post('/shoot',armoryServer.postShoot);
 app.get('/shoot/:id',armoryServer.getModel("shoot"));
 app.put('/shoot/:id',armoryServer.putModel("shoot"));
 app.delete('/shoot/:id',armoryServer.deleteModel("shoot"));

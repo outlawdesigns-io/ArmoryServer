@@ -10,7 +10,7 @@ class FirearmImage extends Record{
     const primaryKey = 'Id';
     super(database,table,primaryKey,id);
     this.publicKeys = [
-      'Id','BinaryData','Firearm','Optic'
+      'Id','BinaryData','Firearm','Optic', 'User'
     ];
   }
   static async getByFirearmId(firearmId){

@@ -5,7 +5,7 @@ const Busboy = require('busboy');
 const { Base64Encode } = require('base64-stream');
 
 const Firearm = require('./models/firearm');
-const Ammo = require('./models/ammo');
+const Ammo = require('./models/ammunition');
 const AmmoPurchase = require('./models/ammopurchase');
 const Caliber = require('./models/caliber');
 const Manufacturer = require('./models/manufacturer');
@@ -27,7 +27,9 @@ consider applying this logic: "if rounds != ammoObj.rounds, update it".
 class ArmoryServer{
   static PostErrorStr = 'POSTs must be made as multipart/form-data';
   static PutErrorStr = 'PUTs must be made as multipart/form-data';
+  static IllegalInstanceStr = 'Permission Denied. Illegal object instantiation.';
   static NullStr = 'null';
+  static _currentUserId = 0; //get from config
   static verifyToken(auth_token){
     if(auth_token === undefined){
       throw {error:'Token not present'};
@@ -63,15 +65,17 @@ class ArmoryServer{
       res.status(400).send(user.error);
       return false;
     }
+    ArmoryServer._currentUserId = user.UID;
     return true;
   }
   getModel(modelStr){
     return async(req,res,next)=>{
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      if(await ArmoryServer.checkToken(req,res,next)){
         try{
           let record = ModelFactory.get(modelStr,req.params.id);
           await record.init();
-          return res.send(record.getPublicProperties());
+          return res.send(!record.User || record.User == ArmoryServer._currentUserId ? record.getPublicProperties() : {message:ArmoryServer.IllegalInstanceStr});
+          //return res.send(record.getPublicProperties());
         }catch(err){
           return res.status(404).send({error:'Invalid UID'});
         }
@@ -80,11 +84,13 @@ class ArmoryServer{
   }
   getAll(modelStr){
     return async(req,res,next)=>{
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      if(await ArmoryServer.checkToken(req,res,next)){
         try{
-          return res.send(await ModelFactory.getClass(modelStr).getAll());
+          //everywhere else, check for user property, if match, allow, else return permission error.
+          //this could turn into a performance bottle neck consider implementing a ArmoryRecord with a getall(userId)
+          let results = await ModelFactory.getClass(modelStr).getAll();
+          return res.send(results.filter(e => !e.User || e.User == ArmoryServer._currentUserId));
         }catch(err){
-          console.log(err);
           return res.status(400).send(err);
         }
       }
@@ -92,8 +98,12 @@ class ArmoryServer{
   }
   deleteModel(modelStr){
     return async(req,res,next)=>{
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      if(await ArmoryServer.checkToken(req,res,next)){
         try{
+          let record = await ModelFactory.get(modelStr,req.params.id).init();
+          if(record.User && record.User != ArmoryServer._currentUserId){
+            return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});
+          }
           let modelClass = ModelFactory.getClass(modelStr);
           await modelClass.delete(req.params.id);
           return res.send({message:'Target Object Deleted',id:req.params.id});
@@ -105,7 +115,7 @@ class ArmoryServer{
   }
   postModel(modelStr){
     return async(req,res,next)=>{
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      if(await ArmoryServer.checkToken(req,res,next)){
         let busboy;
         try{
           busboy = Busboy({headers:req.headers});
@@ -115,6 +125,9 @@ class ArmoryServer{
         let model = ModelFactory.get(modelStr);
         busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val; });
         busboy.on('finish', async ()=>{
+          if(model.publicKeys.includes("User")){
+            model.User = ArmoryServer._currentUserId;
+          }
           try{
             model = await model.create();
             return res.send(model.getPublicProperties());
@@ -127,7 +140,7 @@ class ArmoryServer{
     }
   }
   async postShoot(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+    if(await ArmoryServer.checkToken(req,res,next)){
       let busboy;
       try{
         busboy = Busboy({headers:req.headers});
@@ -138,7 +151,7 @@ class ArmoryServer{
       busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val; });
       busboy.on('finish',async ()=>{
         try{
-          model = await ModelFactory.getClass('shoot').new(model.FireArm,model.Ammo,model.Rounds, model.Distance_Ft, model.Optic);
+          model = await ModelFactory.getClass('shoot').new(model.Firearm,model.Ammo,model.Rounds, model.Distance_Ft, model.Optic, ArmoryServer._currentUserId);
           return res.send(model.getPublicProperties());
         }catch(err){
           return res.status(400).send({error:err});
@@ -149,7 +162,7 @@ class ArmoryServer{
   }
   putModel(modelStr){
     return async(req,res,next) => {
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      if(await ArmoryServer.checkToken(req,res,next)){
         let busboy;
         try{
           busboy = Busboy({headers:req.headers});
@@ -160,6 +173,9 @@ class ArmoryServer{
           let model = await ModelFactory.get(modelStr,req.params.id).init();
           busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val;});
           busboy.on('finish',async ()=>{
+            if(model.User && model.User != ArmoryServer._currentUserId){
+              return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});
+            }
             model = await model.update();
             return res.send(model.getPublicProperties());
           });
@@ -171,8 +187,12 @@ class ArmoryServer{
     }
   }
   async receiveAmmoPurchase(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+    if(await ArmoryServer.checkToken(req,res,next)){
       try{
+        let model = await ModelFactory.get('ammopurchase',req.params.id).init();
+        if(model.User != ArmoryServer._currentUserId){
+          return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});
+        }
         return res.send(await AmmoPurchase.receive(req.params.id));
       }catch(err){
         return res.status(400).send(err.message);
@@ -180,36 +200,44 @@ class ArmoryServer{
     }
   }
   async getWaitingAmmo(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+    if(await ArmoryServer.checkToken(req,res,next)){
       try{
-        return res.send(await AmmoPurchase.getAwaitingReceipt());
+        return res.send(await AmmoPurchase.getAwaitingReceipt(ArmoryServer._currentUserId));
       }catch(err){
         return res.status(400).send(err.message);
       }
     }
   }
   async getShootImages(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+    if(await ArmoryServer.checkToken(req,res,next)){
       try{
-        res.send(await ModelFactory.getClass('target').getByShootId(req.params.id));
+        let model = await ModelFactory.get('shoot',req.params.id).init();
+        if(model.User != ArmoryServer._currentUserId){
+          return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});
+        }
+        return res.send(await ModelFactory.getClass('target').getByShootId(req.params.id));
       }catch(err){
-        res.status(404).send('Not Found');
+        return res.status(404).send('Not Found');
       }
     }
   }
   async getFirearmImages(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+    if(await ArmoryServer.checkToken(req,res,next)){
       try{
-        res.send(await ModelFactory.getClass('firearmimage').getByFirearmId(req.params.id));
+        let model = await ModelFactory.get('firearm',req.params.id).init();
+        if(model.User != ArmoryServer._currentUserId){
+          return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});
+        }
+        return res.send(await ModelFactory.getClass('firearmimage').getByFirearmId(req.params.id));
       }catch(err){
-        res.status(404).send('Not Found');
+        return res.status(404).send('Not Found');
       }
     }
   }
   postImage(modelStr){
     return async(req,res,next) => {
       let model = ModelFactory.get(modelStr);
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      if(await ArmoryServer.checkToken(req,res,next)){
         let busboy;
         try{
           busboy = Busboy({headers:req.headers,limits:{files:1}});
@@ -228,6 +256,7 @@ class ArmoryServer{
             let insert = ModelFactory.get(modelStr);
             try{
               model.BinaryData = results.toString('base64');
+              model.User = ArmoryServer._currentUserId;
               await model.create();
               res.send(model.getPublicProperties());
             }catch(err){

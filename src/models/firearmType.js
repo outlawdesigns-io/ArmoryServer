@@ -2,17 +2,17 @@
 
 const Record = require('outlawdesigns.io.noderecord');
 
-class Firearm extends Record{
+class FirearmType extends Record{
 
   constructor(id){
     const database = global.config[process.env.NODE_ENV].DB_DB;
-    const table = 'Firearm';
+    const table = 'FirearmType';
     const primaryKey = 'Id';
     super(database,table,primaryKey,id);
     this.publicKeys = [
-      'Id','FirearmType','NickName','Serial_Number','AcquisitionDate', 'Price', 'CurrentOptic', 'User'
+      'Id','Manufacturer','Caliber','Model', 'LinkToProduct', 'MSRP'
     ];
   }
 }
 
-module.exports = Firearm;
+module.exports = FirearmType;

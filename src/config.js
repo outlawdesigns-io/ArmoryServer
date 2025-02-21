@@ -9,8 +9,9 @@ module.exports = {
     AUTHHEADER:'auth_token',
     DBUSER:'root',
     DBHOST:'localhost',
-    DBPASS:'',
-    DB_DB:'Armory_Test',
+    DBPASS:'example',
+    DB_DB:'Armory_Refactor',
+    DEFAULT_USER_ID:0
   },
   testing:{
     PORT:9912,
@@ -24,6 +25,7 @@ module.exports = {
     DBHOST:'localhost',
     DBPASS:'',
     DB_DB:'Armory_Test',
+    DEFAULT_USER_ID:0
   },
   production:{
     PORT:8420,
@@ -37,5 +39,6 @@ module.exports = {
     DBHOST:'localhost',
     DBPASS:'',
     DB_DB:'Armory',
+    DEFAULT_USER_ID:0
   }
 };

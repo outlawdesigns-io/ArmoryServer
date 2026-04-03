@@ -1,33 +1,40 @@
-const express = require('express');
-const http = require('https');
-const fs = require('fs');
-const ArmoryServer = require('./src/armoryServer');
+import express from 'express';
+import http from 'https';
+import fs from 'fs';
+import ArmoryServer from './src/armoryServer.js';
+import morgan from 'morgan';
 
 /*Config*/
-global.config = require('./src/config');
-process.env.NODE_ENV = process.env.NODE_ENV || 'development';
-const app = express();
+import './src/config.js';
 
+/*SETUP THE EXPRESS SERVER*/
+const app = express();
+app.set('trust proxy',true);
 app.use(function(req, res, next) {
   res.header("Access-Control-Allow-Origin", "*");
-  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, auth_token, request_token, password");
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
   res.header("Access-Control-Allow-Methods", "*");
   next();
 });
-
 if(process.env.NODE_ENV !== 'testing'){
-  //app.use(require('morgan')('combined'));
-  var morgan = require('morgan');
+  //start logging
   morgan.token('date', function() {
     var p = new Date().toString().replace(/[A-Z]{3}\+/,'+').split(/ /);
     return( p[2]+'/'+p[1]+'/'+p[3]+':'+p[4]+' '+p[5].replace('GMT','') );
   });
-  app.use(morgan());
+  app.use(morgan('combined'));
 }
 
-const armoryServer = new ArmoryServer();
+process.env.NODE_TLS_REJECT_UNAUTHORIZED=0;
+const armoryServer = new ArmoryServer(process.env.AUTH_DISCOVERY_URI, process.env.AUTH_CLIENT_ID, [process.env.AUTH_CLIENT_AUDIENCE]);
 
 /*Register Routes*/
+app.get('/firearmtype',armoryServer.getAll("firearmtype"));
+app.post('/firearmtype',armoryServer.postModel("firearmtype"));
+app.get('/firearmtype/:id',armoryServer.getModel("firearmtype"));
+app.put('/firearmtype/:id',armoryServer.putModel("firearmtype"));
+app.delete('/firearmtype/:id',armoryServer.deleteModel("firearmtype"));
+
 app.get('/firearm',armoryServer.getAll("firearm"));
 app.post('/firearm',armoryServer.postModel("firearm"));
 app.get('/firearm/:id',armoryServer.getModel("firearm"));
@@ -35,6 +42,12 @@ app.put('/firearm/:id',armoryServer.putModel("firearm"));
 app.delete('/firearm/:id',armoryServer.deleteModel("firearm"));
 app.post('/firearm/:id/image',armoryServer.postImage('firearmimage'));
 app.get('/firearm/:id/image',armoryServer.getFirearmImages);
+
+app.get('/ammotype',armoryServer.getAll("ammotype"));
+app.post('/ammotype',armoryServer.postModel("ammotype"));
+app.get('/ammotype/:id',armoryServer.getModel("ammotype"));
+app.put('/ammotype/:id',armoryServer.putModel("ammotype"));
+app.delete('/ammotype/:id',armoryServer.deleteModel("ammotype"));
 
 app.get('/ammo',armoryServer.getAll("ammo"));
 app.post('/ammo',armoryServer.postModel("ammo"));
@@ -75,7 +88,13 @@ app.get('/vendor',armoryServer.getAll("vendor"));
 app.post('/vendor',armoryServer.postModel("vendor"));
 app.get('/vendor/:id',armoryServer.getModel("vendor"));
 app.put('/vendor/:id',armoryServer.putModel("vendor"));
-app.delete('/vendor/:id',armoryServer.deleteModel("shoot"));
+app.delete('/vendor/:id',armoryServer.deleteModel("vendor"));
+
+app.get('/optictype',armoryServer.getAll("optictype"));
+app.post('/optictype',armoryServer.postModel("optictype"));
+app.get('/optictype/:id',armoryServer.getModel("optictype"));
+app.put('/optictype/:id',armoryServer.putModel("optictype"));
+app.delete('/optictype/:id',armoryServer.deleteModel("optictype"));
 
 app.get('/optic',armoryServer.getAll("optic"));
 app.post('/optic',armoryServer.postModel("optic"));
@@ -89,20 +108,11 @@ app.get('/firearmimage/:id',armoryServer.getModel("firearmimage"));
 app.delete('/firearmimage/:id',armoryServer.deleteModel("firearmimage"));
 
 
-
-
-/*Start Server*/
-if(process.env.NODE_ENV !== 'production'){
-  app.listen(global.config[process.env.NODE_ENV].PORT,()=>{
-    console.log(process.env.NODE_ENV + ' mode listening on port: ' + global.config[process.env.NODE_ENV].PORT);
-  });
-}else{
-  http.createServer({
-    key: fs.readFileSync(global.config[process.env.NODE_ENV].SSLKEYPATH),
-    cert: fs.readFileSync(global.config[process.env.NODE_ENV].SSLCERTPATH)
-  },app).listen(global.config[process.env.NODE_ENV].PORT,()=>{
-    console.log(process.env.NODE_ENV + ' mode listening on port: ' + global.config[process.env.NODE_ENV].PORT);
+/*START SERVER*/
+if(process.env.NODE_ENV !== 'testing'){
+  app.listen(process.env.PORT,()=>{
+    console.log(process.env.NODE_ENV + ' mode listening on port: ' + process.env.PORT);
   });
 }
 
-module.exports = app; // makes the server available for testing
+export default app; // makes the server available for testing

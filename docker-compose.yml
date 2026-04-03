@@ -1,0 +1,18 @@
+services:
+  backend:
+    image: armory-expressjs
+    environment:
+      NODE_ENV: production
+      MYSQL_HOST: localhost
+      MYSQL_USER: root
+      MYSQL_PASS: example
+      ARMORY_MYSQL_DB: Armory
+      AUTH_DISCOVERY_URI: https://auth.outlawdesigns.io/.well-known/openid-configuration
+      AUTH_CLIENT_ID: armorysuite-server
+      AUTH_CLIENT_AUDIENCE: https://armory-service.outlawdesigns.io
+      TZ: America/Chicago
+    build:
+      context: ./
+      dockerfile: ./Dockerfile
+    ports:
+      - '9550:80'

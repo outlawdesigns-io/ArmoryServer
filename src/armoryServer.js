@@ -27,8 +27,8 @@ class ArmoryServer{
     // this.getAll = this.getAll.bind(this);
     // this.deleteModel = this.deleteModel.bind(this);
     // this.postModel = this.postModel.bind(this);
-    // this.postShoot = this.postShoot.bind(this);
     // this.putModel = this.putModel.bind(this);
+    this.postShoot = this.postShoot.bind(this);
     this.receiveAmmoPurchase = this.receiveAmmoPurchase.bind(this);
     this.getWaitingAmmo = this.getWaitingAmmo.bind(this);
     this.getShootImages = this.getShootImages.bind(this);
@@ -176,7 +176,6 @@ class ArmoryServer{
   async receiveAmmoPurchase(req,res,next){
     if(await this.checkToken(req,res,next)){
       try{
-        console.log(req.params);
         let model = await ModelFactory.get('ammopurchase',req.params.id).init();
         if(model.User != this._currentUserId){
           return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});

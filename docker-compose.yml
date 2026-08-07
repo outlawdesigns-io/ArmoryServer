@@ -1,14 +1,18 @@
-version: '3.1'
-
 services:
   backend:
-    image: armoryserver-expressjs
+    image: armory-expressjs
+    environment:
+      NODE_ENV: production
+      MYSQL_HOST: localhost
+      MYSQL_USER: root
+      MYSQL_PASS: example
+      ARMORY_MYSQL_DB: Armory
+      AUTH_DISCOVERY_URI: https://auth.outlawdesigns.io/.well-known/openid-configuration
+      AUTH_CLIENT_ID: armorysuite-server
+      AUTH_CLIENT_AUDIENCE: https://armory-service.outlawdesigns.io
+      TZ: America/Chicago
     build:
-      context: $DOCKER_BUILD_DIR/ArmoryServer/
-      dockerfile: $DOCKER_BUILD_DIR/ArmoryServer/Dockerfile
-      args:
-        ENV: $NODE_BUILD_ENV
+      context: ./
+      dockerfile: ./Dockerfile
     ports:
-      - '8420:8420'
-    volumes:
-      - $DOCKER_SHARED_LOG_DIR:/etc/apache2/certs
+      - '9550:80'

@@ -1,14 +1,8 @@
-FROM node:latest
+#Pinned to node:20 to ensure armv7 support
+FROM node:20-bullseye
 WORKDIR /usr/src/app/
-ARG ENV
-ENV TZ=America/Chicago
-ENV NODE_ENV=$ENV
-RUN mkdir -p /mnt/LOE/log
-RUN mkdir -p /etc/apache2/certs/
-RUN echo America/Chicago > /etc/timezone
-RUN ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime
-RUN dpkg-reconfigure -f noninteractive tzdata
+RUN mkdir /log
 COPY . .
 RUN npm install
-EXPOSE 8420
-CMD ["/bin/sh","-c","npm start > /mnt/LOE/log/armory.api.log"]
+EXPOSE 80
+CMD ["/bin/sh","-c","npm start > /log/armory-api.log"]

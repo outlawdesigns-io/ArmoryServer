@@ -10,7 +10,7 @@ class TargetImage extends Record{
     const primaryKey = 'Id';
     super(database,table,primaryKey,id);
     this.publicKeys = [
-      'Id','ShootId','BinaryData'
+      'Id','ShootId','BinaryData', 'User'
     ];
   }
   static async getByShootId(shootId){

@@ -2,7 +2,7 @@
 
 const Record = require('outlawdesigns.io.noderecord');
 const Firearm = require('./firearm');
-const Ammo = require('./ammo');
+const Ammo = require('./ammunition');
 
 class Shoot extends Record{
 
@@ -12,10 +12,10 @@ class Shoot extends Record{
     const primaryKey = 'Id';
     super(database,table,primaryKey,id);
     this.publicKeys = [
-      'Id','FireArm','Ammo','Rounds','Distance_Ft','Created', 'Optic'
+      'Id','Firearm','Ammo','Rounds','Distance_Ft','Created', 'Optic', 'User'
     ];
   }
-  static async new(firearmId, ammoId, rounds, distance_ft, optic){
+  static async new(firearmId, ammoId, rounds, distance_ft, optic, user){
     let firearm;
     let ammo;
     let shoot = new Shoot();
@@ -27,12 +27,13 @@ class Shoot extends Record{
     }catch(err){
       throw err;
     }
-    shoot.FireArm = firearmId;
+    shoot.Firearm = firearmId;
     shoot.Ammo = ammoId;
     shoot.Rounds = rounds;
     shoot.Distance_Ft = distance_ft;
     shoot.Optic = optic;
     shoot.Created = shoot.db.date();
+    shoot.User = user;
     return await shoot.create();
   }
 }

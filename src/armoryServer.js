@@ -1,22 +1,13 @@
 "use strict";
 
-const http = require('https');
-const Busboy = require('busboy');
-const { Base64Encode } = require('base64-stream');
+import http from 'https';
+import busboy from 'busboy';
 
-const Firearm = require('./models/firearm');
-const Ammo = require('./models/ammo');
-const AmmoPurchase = require('./models/ammopurchase');
-const Caliber = require('./models/caliber');
-const Manufacturer = require('./models/manufacturer');
-const Shoot = require('./models/shoot');
-const Vendor = require('./models/vendor');
-const TargetImage = require('./models/targetImage');
-const Optic = require('./models/optic');
+import Base64Encode from 'base64-stream';
 
-const ModelFactory = require('./modelFactory');
-
-//const fs = require('fs');
+import ModelFactory from '@outlawdesigns/armorysdk';
+// import ModelFactory from '../../ArmorySDK/index.js';
+import authClient from '@outlawdesigns/authenticationclient';
 
 /*
 currently can't put shoots from the client. If you implement this in the future,
@@ -25,75 +16,76 @@ consider applying this logic: "if rounds != ammoObj.rounds, update it".
 */
 
 class ArmoryServer{
+  _currentUserId;
   static PostErrorStr = 'POSTs must be made as multipart/form-data';
   static PutErrorStr = 'PUTs must be made as multipart/form-data';
+  static IllegalInstanceStr = 'Permission Denied. Illegal object instantiation.';
   static NullStr = 'null';
-  static verifyToken(auth_token){
-    if(auth_token === undefined){
-      throw {error:'Token not present'};
-    }
-    return new Promise((resolve,reject)=>{
-      let options = {
-        hostname:global.config[process.env.NODE_ENV].ACCNTHOST,
-        port:global.config[process.env.NODE_ENV].ACCNTPORT,
-        path:global.config[process.env.NODE_ENV].ACCNTVERIFYEND,
-        method:'GET',
-        headers:{
-          'Content-Type':'application/json; charset=utf-8',
-          'auth_token':auth_token,
-        }
-      };
-      let req = http.request(options,(response)=>{
-        let data = '';
-        response.on('data',(chunk)=>{ data += chunk });
-        response.on('end',()=>{ resolve(JSON.parse(data)) });
-      }).on('error',(err)=>{
-        reject(err.message)
-      });
-      req.write(JSON.stringify(auth_token));
-    });
+  constructor(oauthIssuerUrl, oathClientId, oauthAudience){
+    // this.checkToken = this.checkToken.bind(this);
+    // this.getModel = this.getModel.bind(this);
+    // this.getAll = this.getAll.bind(this);
+    // this.deleteModel = this.deleteModel.bind(this);
+    // this.postModel = this.postModel.bind(this);
+    // this.putModel = this.putModel.bind(this);
+    this.postShoot = this.postShoot.bind(this);
+    this.receiveAmmoPurchase = this.receiveAmmoPurchase.bind(this);
+    this.getWaitingAmmo = this.getWaitingAmmo.bind(this);
+    this.getShootImages = this.getShootImages.bind(this);
+    this.getFirearmImages = this.getFirearmImages.bind(this);
+    // this.postImage = this.postImage.bind(this);
+    this._authAudience = oauthAudience;
+    this._authClient = authClient;
+    this._authClient.init(oauthIssuerUrl, oathClientId);
   }
-  static async checkToken(req,res,next){
-    if(!req.headers['auth_token']){
-      res.status(400).send('auth_token missing.');
+  async checkToken(req,res,next){
+    let auth_token = (req.headers['authorization'] || '' ).split(' ')[1] || null;
+    try{
+      let resp = await this._authClient.verifyAccessToken(auth_token,this._authAudience);
+      this._currentUserId = resp.sub;
+      return true;
+    }catch(err){
       return false;
     }
-    let user = await ArmoryServer.verifyToken(req.headers.auth_token).catch(console.error);
-    if("error" in user){
-      res.status(400).send(user.error);
-      return false;
-    }
-    return true;
   }
   getModel(modelStr){
     return async(req,res,next)=>{
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      if(await this.checkToken(req,res,next)){
         try{
           let record = ModelFactory.get(modelStr,req.params.id);
           await record.init();
-          return res.send(record.getPublicProperties());
+          return res.send(!record.User || record.User == this._currentUserId ? record.getPublicProperties() : {message:ArmoryServer.IllegalInstanceStr});
+          //return res.send(record.getPublicProperties());
         }catch(err){
           return res.status(404).send({error:'Invalid UID'});
         }
       }
+      return res.status(400).send({message:'Token Verification Error.'});
     }
   }
   getAll(modelStr){
     return async(req,res,next)=>{
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      if(await this.checkToken(req,res,next)){
         try{
-          return res.send(await ModelFactory.getClass(modelStr).getAll());
+          //everywhere else, check for user property, if match, allow, else return permission error.
+          //this could turn into a performance bottle neck consider implementing a ArmoryRecord with a getall(userId)
+          let results = await ModelFactory.getClass(modelStr).getAll();
+          return res.send(results.filter(e => !e.User || e.User == this._currentUserId));
         }catch(err){
-          console.log(err);
           return res.status(400).send(err);
         }
       }
+      return res.status(400).send({message:'Token Verification Error.'});
     }
   }
   deleteModel(modelStr){
     return async(req,res,next)=>{
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+      if(await this.checkToken(req,res,next)){
         try{
+          let record = await ModelFactory.get(modelStr,req.params.id).init();
+          if(record.User && record.User != this._currentUserId){
+            return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});
+          }
           let modelClass = ModelFactory.getClass(modelStr);
           await modelClass.delete(req.params.id);
           return res.send({message:'Target Object Deleted',id:req.params.id});
@@ -101,20 +93,25 @@ class ArmoryServer{
           return res.status(400).send(err);
         }
       }
+      return res.status(400).send({message:'Token Verification Error.'});
     }
   }
   postModel(modelStr){
     return async(req,res,next)=>{
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-        let busboy;
+      if(await this.checkToken(req,res,next)){
+        let bb;
         try{
-          busboy = Busboy({headers:req.headers});
+          bb = busboy({headers:req.headers});
         }catch(err){
+          console.log(err);
           return res.status(400).send({error:ArmoryServer.PostErrorStr});
         }
         let model = ModelFactory.get(modelStr);
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val; });
-        busboy.on('finish', async ()=>{
+        bb.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val; });
+        bb.on('finish', async ()=>{
+          if(model.publicKeys.includes("User")){
+            model.User = this._currentUserId;
+          }
           try{
             model = await model.create();
             return res.send(model.getPublicProperties());
@@ -122,103 +119,126 @@ class ArmoryServer{
             return res.status(400).send({error:err});
           }
         });
-        return req.pipe(busboy);
+        return req.pipe(bb);
       }
+      return res.status(400).send({message:'Token Verification Error.'});
     }
   }
   async postShoot(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-      let busboy;
+    if(await this.checkToken(req,res,next)){
+      let bb;
       try{
-        busboy = Busboy({headers:req.headers});
+        bb = busboy({headers:req.headers});
       }catch(err){
         return res.status(400).send({error:ArmoryServer.PostErrorStr});
       }
       let model = ModelFactory.get('shoot');
-      busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val; });
-      busboy.on('finish',async ()=>{
+      bb.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val; });
+      bb.on('finish',async ()=>{
         try{
-          model = await ModelFactory.getClass('shoot').new(model.FireArm,model.Ammo,model.Rounds, model.Distance_Ft, model.Optic);
+          model = await ModelFactory.getClass('shoot').new(model.Firearm,model.Ammo,model.Rounds, model.Distance_Ft, model.Optic, this._currentUserId);
           return res.send(model.getPublicProperties());
         }catch(err){
           return res.status(400).send({error:err});
         }
       });
-      return req.pipe(busboy);
+      return req.pipe(bb);
     }
+    return res.status(400).send({message:'Token Verification Error.'});
   }
   putModel(modelStr){
     return async(req,res,next) => {
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-        let busboy;
+      if(await this.checkToken(req,res,next)){
+        let bb;
         try{
-          busboy = Busboy({headers:req.headers});
+          bb = busboy({headers:req.headers});
         }catch(err){
           return res.status(400).send({error:ArmoryServer.PutErrorStr});
         }
         try{
           let model = await ModelFactory.get(modelStr,req.params.id).init();
-          busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val;});
-          busboy.on('finish',async ()=>{
+          bb.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val;});
+          bb.on('finish',async ()=>{
+            if(model.User && model.User != this._currentUserId){
+              return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});
+            }
             model = await model.update();
             return res.send(model.getPublicProperties());
           });
-          return req.pipe(busboy);
+          return req.pipe(bb);
         }catch(err){
-          res.status(400).send(err);
+          return res.status(400).send(err);
         }
       }
+      return res.status(400).send({message:'Token Verification Error.'});
     }
   }
   async receiveAmmoPurchase(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+    if(await this.checkToken(req,res,next)){
       try{
-        return res.send(await AmmoPurchase.receive(req.params.id));
+        let model = await ModelFactory.get('ammopurchase',req.params.id).init();
+        if(model.User != this._currentUserId){
+          return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});
+        }
+        return res.send(await ModelFactory.getClass('ammopurchase').receive(req.params.id));
       }catch(err){
         return res.status(400).send(err.message);
       }
     }
+    return res.status(400).send({message:'Token Verification Error.'});
   }
   async getWaitingAmmo(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+    if(await this.checkToken(req,res,next)){
       try{
-        return res.send(await AmmoPurchase.getAwaitingReceipt());
+        return res.send(await ModelFactory.getClass('ammopurchase').getAwaitingReceipt(this._currentUserId));
       }catch(err){
         return res.status(400).send(err.message);
       }
     }
+    return res.status(400).send({message:'Token Verification Error.'});
   }
   async getShootImages(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+    if(await this.checkToken(req,res,next)){
       try{
-        res.send(await ModelFactory.getClass('target').getByShootId(req.params.id));
+        let model = await ModelFactory.get('shoot',req.params.id).init();
+        if(model.User != this._currentUserId){
+          return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});
+        }
+        return res.send(await ModelFactory.getClass('targetimage').getByShootId(req.params.id));
       }catch(err){
-        res.status(404).send('Not Found');
+        console.log(err);
+        return res.status(404).send('Not Found');
       }
     }
+    return res.status(400).send({message:'Token Verification Error.'});
   }
   async getFirearmImages(req,res,next){
-    if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
+    if(await this.checkToken(req,res,next)){
       try{
-        res.send(await ModelFactory.getClass('firearmimage').getByFirearmId(req.params.id));
+        let model = await ModelFactory.get('firearm',req.params.id).init();
+        if(model.User != this._currentUserId){
+          return res.status(400).send({message:ArmoryServer.IllegalInstanceStr});
+        }
+        return res.send(await ModelFactory.getClass('firearmimage').getByFirearmId(req.params.id));
       }catch(err){
-        res.status(404).send('Not Found');
+        return res.status(404).send('Not Found');
       }
     }
+    return res.status(400).send({message:'Token Verification Error.'});
   }
   postImage(modelStr){
     return async(req,res,next) => {
       let model = ModelFactory.get(modelStr);
-      if(process.env.NODE_ENV != 'production' || await ArmoryServer.checkToken(req,res,next)){
-        let busboy;
+      if(await this.checkToken(req,res,next)){
+        let bb;
         try{
-          busboy = Busboy({headers:req.headers,limits:{files:1}});
+          bb = busboy({headers:req.headers,limits:{files:1}});
         }catch(err){
           res.status(400).send({error:ArmoryServer.PostErrorStr});
           return;
         }
-        busboy.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val;});
-        busboy.on('file',(fieldname,file,filename,encoding,mimetype)=>{
+        bb.on('field',(fieldname,val,fieldnameTruncated,valTruncated,encoding,mimetype)=>{ model[fieldname] = val == ArmoryServer.NullStr ? null:val;});
+        bb.on('file',(fieldname,file,filename,encoding,mimetype)=>{
           let chunks = [];
           file.on('data',(chunk)=>{
             chunks.push(chunk);
@@ -228,6 +248,7 @@ class ArmoryServer{
             let insert = ModelFactory.get(modelStr);
             try{
               model.BinaryData = results.toString('base64');
+              model.User = this._currentUserId;
               await model.create();
               res.send(model.getPublicProperties());
             }catch(err){
@@ -235,10 +256,11 @@ class ArmoryServer{
             }
           });
         });
-        return req.pipe(busboy);
+        return req.pipe(bb);
       }
+      return res.status(400).send({message:'Token Verification Error.'});
     }
   }
 }
 
-module.exports = ArmoryServer;
+export default ArmoryServer;

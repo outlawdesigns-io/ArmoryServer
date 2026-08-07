@@ -10,16 +10,18 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@outlawdesigns/armorysdk": "^1.0.6",
+    "@outlawdesigns/authenticationclient": "^2.1.2",
     "base64-stream": "^1.0.0",
     "body-parser": "^1.20.2",
     "busboy": "^1.6.0",
     "express": "^4.18.2",
-    "morgan": "^1.10.0",
-    "outlawdesigns.io.noderecord": "^2.0.0"
+    "morgan": "^1.10.0"
   },
   "devDependencies": {
     "chai": "^4.3.4",
     "chai-http": "^4.3.0",
     "mocha": "^9.1.1"
-  }
+  },
+  "type": "module"
 }

@@ -1,7 +1,7 @@
 "use strict";
 
 const Record = require('outlawdesigns.io.noderecord');
-const Ammo = require('./ammo');
+const Ammunition = require('./ammunition');
 const Vendor = require('./vendor');
 
 class AmmoPurchase extends Record{
@@ -12,15 +12,15 @@ class AmmoPurchase extends Record{
     const primaryKey = 'Id';
     super(database,table,primaryKey,id);
     this.publicKeys = [
-      'Id','Ammo','Vendor','Rounds','Price','DatePurchased','DateReceived'
+      'Id','Ammunition','Vendor','Rounds','Price','DatePurchased','DateReceived','User'
     ];
   }
-  static async new(ammoId,vendorId,rounds,price,datePurchased,dateReceived){
+  static async new(ammoId,vendorId,rounds,price,datePurchased,dateReceived,user){
     let ammo;
     let vendor;
     let purchase = new AmmoPurchase();
     try{
-      ammo = await new Ammo(ammoId).init();
+      ammo = await new Ammunition(ammoId).init();
       vendor = await new Vendor(vendorId).init();
     }catch(err){
       throw err;
@@ -34,7 +34,8 @@ class AmmoPurchase extends Record{
     purchase.Price = price;
     purchase.Rounds = rounds;
     purchase.Vendor = vendorId;
-    purchase.Ammo = ammoId;
+    purchase.Ammunition = ammoId;
+    purchase.User = user;
     return await purchase.create();
   }
   static async receive(purchaseId){
@@ -44,9 +45,10 @@ class AmmoPurchase extends Record{
     let ammo;
     try{
       purchase = await new AmmoPurchase(purchaseId).init();
-      ammo = await new Ammo(purchase.Ammo).init();
+      ammo = await new Ammunition(purchase.Ammunition).init();
       ammo.Rounds += purchase.Rounds;
       await ammo.update();
+      purchase.DatePurchased = purchase.db.date(purchase.DatePurchased);
       purchase.DateReceived = purchase.db.date();
       await purchase.update();
       return purchase.getPublicProperties();
@@ -54,10 +56,10 @@ class AmmoPurchase extends Record{
       throw err;
     }
   }
-  static async getAwaitingReceipt(){
+  static async getAwaitingReceipt(user){
     let records = [];
     let purchase = new AmmoPurchase();
-    let ids = await purchase.db.table(purchase.table).select(purchase.primaryKey).where('DateReceived = 0').execute();
+    let ids = await purchase.db.table(purchase.table).select(purchase.primaryKey).where('DateReceived is null').andWhere('User = ' + user).execute();
     for(let id in ids){
       let obj = await new AmmoPurchase(ids[id][purchase.primaryKey]).init();
       records.push(obj.getPublicProperties());

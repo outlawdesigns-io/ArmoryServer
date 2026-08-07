@@ -10,7 +10,7 @@ class Vendor extends Record{
     const primaryKey = 'Id';
     super(database,table,primaryKey,id);
     this.publicKeys = [
-      'Id','Name','Website'
+      'Id','Name','Website', 'User'
     ];
   }
 }

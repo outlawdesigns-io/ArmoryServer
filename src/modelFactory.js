@@ -1,17 +1,21 @@
-const Firearm = require('./models/firearm');
-const Ammo = require('./models/ammo');
-const AmmoPurchase = require('./models/ammopurchase');
 const Caliber = require('./models/caliber');
 const Manufacturer = require('./models/manufacturer');
-const Shoot = require('./models/shoot');
-const Vendor = require('./models/vendor');
-const TargetImage = require('./models/targetImage');
-const Optic = require('./models/optic');
+const FirearmType = require('./models/firearmType');
+const Firearm = require('./models/firearm');
 const FirearmImage = require('./models/firearmImage');
+const OpticType = require('./models/opticType');
+const Optic = require('./models/optic');
+const AmmunitionType = require('./models/ammunitionType');
+const Ammunition = require('./models/ammunition');
+const AmmoPurchase = require('./models/ammopurchase');
+const Vendor = require('./models/vendor');
+const Shoot = require('./models/shoot');
+const TargetImage = require('./models/targetImage');
+
 
 const models = {
   firearm: (id) => new Firearm(id),
-  ammo: (id) => new Ammo(id),
+  ammo: (id) => new Ammunition(id),
   ammopurchase: (id) => new AmmoPurchase(id),
   caliber: (id) => new Caliber(id),
   manufacturer: (id) => new Manufacturer(id),
@@ -19,11 +23,14 @@ const models = {
   vendor: (id) => new Vendor(id),
   optic: (id) => new Optic(id),
   target: (id) => new TargetImage(id),
-  firearmimage: (id) => new FirearmImage(id)
+  firearmimage: (id) => new FirearmImage(id),
+  ammoType: (id) => new AmmunitionType(id),
+  firearmType: (id) => new FirearmType(id),
+  opticType: (id) => new OpticType(id)
 };
 const modelClasses = {
   firearm:Firearm,
-  ammo:Ammo,
+  ammo:Ammunition,
   ammopurchase:AmmoPurchase,
   caliber:Caliber,
   manufacturer:Manufacturer,
@@ -31,7 +38,10 @@ const modelClasses = {
   vendor:Vendor,
   optic:Optic,
   target:TargetImage,
-  firearmimage:FirearmImage
+  firearmimage:FirearmImage,
+  ammotype:AmmunitionType,
+  firearmtype:FirearmType,
+  optictype:OpticType
 }
 
 module.exports = {

@@ -10,7 +10,7 @@ class Optic extends Record{
     const primaryKey = 'Id';
     super(database,table,primaryKey,id);
     this.publicKeys = [
-      'Id','Manufacturer', 'Name', 'MagnificationTimes', 'LinkToProduct'
+      'Id','OpticType', 'AcquisitionDate', 'SerialNumber', 'Price', 'User'
     ];
   }
 }

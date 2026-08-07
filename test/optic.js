@@ -1,16 +1,19 @@
 process.env.NODE_ENV = 'testing';
 
-const chai = require('chai');
-const chaiHttp = require('chai-http');
-const server = require('../index');
-const ModelFactory = require('../src/modelFactory');
-const should = chai.should();
+import '../src/config.js';
+import { should, use } from 'chai';
+import chaiHttp from 'chai-http';
+const chai = use(chaiHttp);
+chai.should();
+import server from '../index.js';
+
+import ModelFactory from '@outlawdesigns/armorysdk';
 
 const testModel = {
-  Manufacturer: 26,
-  Name: 'HS510C',
-  MagnificationTimes: 1,
-  LinkToProduct: 'https://holosun.com/products/reflex-sight/510/hs510c.html'
+  OpticType: 26,
+  AcquisitionDate:'2023-10-07 00:00:00',
+  SerialNumber:'ABC123',
+  Price:325,
 }
 
 function _createModel(targetObj){
@@ -24,7 +27,8 @@ function _createModel(targetObj){
 chai.use(chaiHttp);
 
 describe('Optic',()=>{
-  beforeEach((done)=>{
+  beforeEach(function(done){
+    this.timeout(5000);
     ModelFactory.getClass('optic').truncate().then(()=>{done()});
   });
   describe('/GET',()=>{
@@ -42,18 +46,19 @@ describe('Optic',()=>{
       chai.request(server)
       .post('/optic')
       .field('Content-Type','multipart/form-data')
-      .field('Manufacturer',testModel.Manufacturer)
-      .field('Name',testModel.Name)
-      .field('MagnificationTimes',testModel.MagnificationTimes)
-      .field('LinkToProduct',testModel.LinkToProduct)
+      .field('OpticType',testModel.OpticType)
+      .field('AcquisitionDate',testModel.AcquisitionDate)
+      .field('SerialNumber',testModel.SerialNumber)
+      .field('Price',testModel.Price)
       .end((err,res)=>{
         res.should.have.status(200);
         res.body.should.be.a('object');
         res.body.should.have.property('Id');
-        res.body.should.have.property('Manufacturer');
-        res.body.should.have.property('Name');
-        res.body.should.have.property('MagnificationTimes');
-        res.body.should.have.property('LinkToProduct');
+        res.body.should.have.property('OpticType');
+        res.body.should.have.property('AcquisitionDate');
+        res.body.should.have.property('SerialNumber');
+        res.body.should.have.property('Price');
+        res.body.should.have.property('User');
         done();
       });
     });
@@ -61,14 +66,16 @@ describe('Optic',()=>{
   describe('/GET/:id',()=>{
     it('should GET an Optic object by the given id',(done)=>{
       let model = _createModel(testModel);
+      model.User = 'test-user';
       model.create().then(()=>{
         chai.request(server).get('/optic/' + model.Id).end((err,res)=>{
           res.should.have.status(200);
           res.body.should.have.property('Id').eql(model.Id);
-          res.body.should.have.property('Manufacturer');
-          res.body.should.have.property('Name');
-          res.body.should.have.property('MagnificationTimes');
-          res.body.should.have.property('LinkToProduct');
+          res.body.should.have.property('OpticType');
+          res.body.should.have.property('AcquisitionDate');
+          res.body.should.have.property('SerialNumber');
+          res.body.should.have.property('Price');
+          res.body.should.have.property('User');
           done();
         });
       });
@@ -77,17 +84,18 @@ describe('Optic',()=>{
   describe('/PUT/:id',()=>{
     it('should UPDATE an Optic object by the given id',(done)=>{
       let model = _createModel(testModel);
+      model.User = 'test-user';
       let updateModel = testModel;
-      updateModel.MagnificationTimes = 2;
+      updateModel.SerialNumber = 'XYZ12895';
       model.create().then(()=>{
         chai.request(server)
         .put('/optic/' + model.Id)
         .field('Content-Type','multipart/form-data')
-        .field('MagnificationTimes',updateModel.MagnificationTimes)
+        .field('SerialNumber',updateModel.SerialNumber)
         .end((err,res)=>{
           res.should.have.status(200);
           res.body.should.be.a('object');
-          res.body.should.have.property('MagnificationTimes').eql(updateModel.MagnificationTimes);
+          res.body.should.have.property('SerialNumber').eql(updateModel.SerialNumber);
           done();
         });
       });
@@ -96,6 +104,7 @@ describe('Optic',()=>{
   describe('/DELETE/:id',()=>{
     it('should DELETE an Optic object given the id',(done)=>{
       let model = _createModel(testModel);
+      model.User = 'test-user';
       model.create().then(()=>{
         chai.request(server).delete('/optic/' + model.Id).end((err,res)=>{
           res.should.have.status(200);

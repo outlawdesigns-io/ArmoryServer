@@ -1,10 +1,13 @@
 process.env.NODE_ENV = 'testing';
 
-const chai = require('chai');
-const chaiHttp = require('chai-http');
-const server = require('../index');
-const ModelFactory = require('../src/modelFactory');
-const should = chai.should();
+import '../src/config.js';
+import { should, use } from 'chai';
+import chaiHttp from 'chai-http';
+const chai = use(chaiHttp);
+chai.should();
+import server from '../index.js';
+
+import ModelFactory from '@outlawdesigns/armorysdk';
 
 const testModel = {
   Name: "WOLF Performance Ammunition",
@@ -25,7 +28,8 @@ function _createModel(targetObj){
 chai.use(chaiHttp);
 
 describe('Manufacturer',()=>{
-  beforeEach((done)=>{
+  beforeEach(function(done){
+    this.timeout(5000);
     ModelFactory.getClass('manufacturer').truncate().then(()=>{done()});
   });
   describe('/GET',()=>{

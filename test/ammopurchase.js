@@ -1,24 +1,22 @@
 process.env.NODE_ENV = 'testing';
 
-const chai = require('chai');
-const chaiHttp = require('chai-http');
-const server = require('../index');
-const ModelFactory = require('../src/modelFactory');
-const should = chai.should();
+import '../src/config.js';
+import { should, use } from 'chai';
+import chaiHttp from 'chai-http';
+const chai = use(chaiHttp);
+chai.should();
+import server from '../index.js';
 
+import ModelFactory from '@outlawdesigns/armorysdk';
 
 const testAmmoModel = {
-  Manufacturer:3,
-  Caliber:2,
-  BulletWeight:55,
-  Casing:"Steel",
-  BulletType:"FMJ",
-  MuzzleVelocity:2953,
-  Rounds:140
+  AmmunitionType:1,
+  Rounds:140,
+  User:'example'
 };
 
 const testModel = {
-  Ammo: 1,
+  Ammunition: 1,
   Vendor: 1,
   Rounds: 500,
   Price: 150,
@@ -37,7 +35,8 @@ function _createModel(targetObj,modelStr){
 chai.use(chaiHttp);
 
 describe('AmmoPurchase',()=>{
-  beforeEach((done)=>{
+  beforeEach(function(done){
+    this.timeout(5000);
     ModelFactory.getClass('ammopurchase').truncate().then(()=>{done()});
   });
   describe('/GET',()=>{
@@ -55,7 +54,7 @@ describe('AmmoPurchase',()=>{
       chai.request(server)
       .post('/ammopurchase')
       .field('Content-Type','multipart/form-data')
-      .field('Ammo',testModel.Ammo)
+      .field('Ammunition',testModel.Ammunition)
       .field('Vendor',testModel.Vendor)
       .field('Rounds',testModel.Rounds)
       .field('Price',testModel.Price)
@@ -65,7 +64,7 @@ describe('AmmoPurchase',()=>{
         res.should.have.status(200);
         res.body.should.be.a('object');
         res.body.should.have.property('Id');
-        res.body.should.have.property('Ammo');
+        res.body.should.have.property('Ammunition');
         res.body.should.have.property('Vendor');
         res.body.should.have.property('Rounds');
         res.body.should.have.property('Price');
@@ -78,11 +77,12 @@ describe('AmmoPurchase',()=>{
   describe('/GET/:id',()=>{
     it('should GET an AmmoPurchase object by the given id',(done)=>{
       let model = _createModel(testModel,'ammopurchase');
+      model.User = 'test-user';
       model.create().then(()=>{
         chai.request(server).get('/ammopurchase/' + model.Id).end((err,res)=>{
           res.should.have.status(200);
           res.body.should.have.property('Id').eql(model.Id);
-          res.body.should.have.property('Ammo');
+          res.body.should.have.property('Ammunition');
           res.body.should.have.property('Vendor');
           res.body.should.have.property('Rounds');
           res.body.should.have.property('Price');
@@ -96,6 +96,7 @@ describe('AmmoPurchase',()=>{
   describe('/PUT/:id',()=>{
     it('should UPDATE an AmmoPurchase object by the given id',(done)=>{
       let model = _createModel(testModel,'ammopurchase');
+      model.User = 'test-user';
       let updateModel = testModel;
       updateModel.Rounds = 1000;
       model.create().then(()=>{
@@ -116,13 +117,18 @@ describe('AmmoPurchase',()=>{
     it('should update a pending AmmoPurchase.DateReceived property',(done)=>{
       let ammoModel = _createModel(testAmmoModel,'ammo');
       let model = _createModel(testModel,'ammopurchase');
+      model.User = 'test-user';
       ammoModel.create().then(()=>{
-        model.Ammo = ammoModel.Id;
+        model.Ammunition = ammoModel.Id;
         model.create().then(()=>{
           chai.request(server).put('/ammopurchase/' + model.Id + '/receive').end((err,res)=>{
             res.should.have.status(200);
             res.body.should.be.a('object');
-            res.body.should.have.property('DateReceived').eql(model.db.date());
+            res.body.should.have.property('DateReceived');
+            const received = new Date(res.body.DateReceived);
+            const now = new Date();
+            received.getTime().should.be.approximately(now.getTime(),2000)
+            //res.body.should.have.property('DateReceived').which.is.approximately(new Date());
             done();
           });
         });
@@ -131,7 +137,8 @@ describe('AmmoPurchase',()=>{
   });
   describe('/DELETE/:id',()=>{
     it('should DELETE an AmmoPurchase object given the id',(done)=>{
-      let model = _createModel(testModel,'ammo');
+      let model = _createModel(testModel,'ammopurchase');
+      model.User = 'test-user';
       model.create().then(()=>{
         chai.request(server).delete('/ammopurchase/' + model.Id).end((err,res)=>{
           res.should.have.status(200);

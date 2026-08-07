@@ -1,18 +1,21 @@
 process.env.NODE_ENV = 'testing';
 
-const chai = require('chai');
-const chaiHttp = require('chai-http');
-const server = require('../index');
-const ModelFactory = require('../src/modelFactory');
-const should = chai.should();
+import '../src/config.js';
+import { should, use } from 'chai';
+import chaiHttp from 'chai-http';
+const chai = use(chaiHttp);
+chai.should();
+import server from '../index.js';
+
+import ModelFactory from '@outlawdesigns/armorysdk';
 
 const testModel = {
-  Manufacturer: 13,
-  Caliber: 2,
-  Model: 'AM-15',
+  FirearmType: 13,
+  NickName: 2,
   Serial_Number: '11111111',
-  CurrentOptic:2,
-  LinkToProduct:'http://www.google.com'
+  AcquisitionDate:'2023-10-07 00:00:00',
+  Price:456.96,
+  CurrentOptic:1
 }
 
 function _createModel(targetObj){
@@ -26,7 +29,8 @@ function _createModel(targetObj){
 chai.use(chaiHttp);
 
 describe('Firearm',()=>{
-  beforeEach((done)=>{
+  beforeEach(function(done){
+    this.timeout(5000);
     ModelFactory.getClass('firearm').truncate().then(()=>{done()});
   });
   describe('/GET',()=>{
@@ -44,22 +48,23 @@ describe('Firearm',()=>{
       chai.request(server)
       .post('/firearm')
       .field('Content-Type','multipart/form-data')
-      .field('Manufacturer',testModel.Manufacturer)
-      .field('Caliber',testModel.Caliber)
-      .field('Model',testModel.Model)
+      .field('FirearmType',testModel.FirearmType)
+      .field('NickName',testModel.NickName)
       .field('Serial_Number',testModel.Serial_Number)
+      .field('AcquisitionDate',testModel.AcquisitionDate)
+      .field('Price',testModel.Price)
       .field('CurrentOptic',testModel.CurrentOptic)
-      .field('LinkToProduct',testModel.LinkToProduct)
       .end((err,res)=>{
         res.should.have.status(200);
         res.body.should.be.a('object');
         res.body.should.have.property('Id');
-        res.body.should.have.property('Manufacturer');
-        res.body.should.have.property('Caliber');
-        res.body.should.have.property('Model');
+        res.body.should.have.property('FirearmType');
+        res.body.should.have.property('NickName');
         res.body.should.have.property('Serial_Number');
+        res.body.should.have.property('AcquisitionDate');
+        res.body.should.have.property('Price');
         res.body.should.have.property('CurrentOptic');
-        res.body.should.have.property('LinkToProduct');
+        res.body.should.have.property('User');
         done();
       });
     });
@@ -67,16 +72,18 @@ describe('Firearm',()=>{
   describe('/GET/:id',()=>{
     it('should GET a Firearm object by the given id',(done)=>{
       let model = _createModel(testModel);
+      model.User = 'test-user';
       model.create().then(()=>{
         chai.request(server).get('/firearm/' + model.Id).end((err,res)=>{
           res.should.have.status(200);
           res.body.should.have.property('Id').eql(model.Id);
-          res.body.should.have.property('Manufacturer');
-          res.body.should.have.property('Caliber');
-          res.body.should.have.property('Model');
+          res.body.should.have.property('FirearmType');
+          res.body.should.have.property('NickName');
           res.body.should.have.property('Serial_Number');
+          res.body.should.have.property('AcquisitionDate');
+          res.body.should.have.property('Price');
           res.body.should.have.property('CurrentOptic');
-          res.body.should.have.property('LinkToProduct');
+          res.body.should.have.property('User');
           done();
         });
       });
@@ -85,6 +92,7 @@ describe('Firearm',()=>{
   describe('/PUT/:id',()=>{
     it('should UPDATE a Firearm object by the given id',(done)=>{
       let model = _createModel(testModel);
+      model.User = 'test-user';
       let updateModel = testModel;
       updateModel.Serial_Number = '22222222';
       model.create().then(()=>{
@@ -104,6 +112,7 @@ describe('Firearm',()=>{
   describe('/DELETE/:id',()=>{
     it('should DELETE a Firearm object given the id',(done)=>{
       let model = _createModel(testModel);
+      model.User = 'test-user';
       model.create().then(()=>{
         chai.request(server).delete('/firearm/' + model.Id).end((err,res)=>{
           res.should.have.status(200);

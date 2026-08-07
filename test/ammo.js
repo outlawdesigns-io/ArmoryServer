@@ -1,21 +1,19 @@
 process.env.NODE_ENV = 'testing';
 
-const chai = require('chai');
-const chaiHttp = require('chai-http');
-const server = require('../index');
-const ModelFactory = require('../src/modelFactory');
-const should = chai.should();
+import '../src/config.js';
+import { should, use } from 'chai';
+import chaiHttp from 'chai-http';
+const chai = use(chaiHttp);
+chai.should();
+import server from '../index.js';
 
-chai.use(chaiHttp);
+import ModelFactory from '@outlawdesigns/armorysdk';
+
+const TIME_OUT = 5000;
 
 const testModel = {
-  Manufacturer:3,
-  Caliber:2,
-  BulletWeight:55,
-  Casing:"Steel",
-  BulletType:"FMJ",
-  MuzzleVelocity:2953,
-  Rounds:140
+  AmmunitionType:1,
+  Rounds:140,
 }
 
 function _createModel(targetObj){
@@ -27,7 +25,8 @@ function _createModel(targetObj){
 }
 
 describe('Ammo',()=>{
-  beforeEach((done)=>{
+  beforeEach(function(done){
+    this.timeout(5000);
     ModelFactory.getClass('ammo').truncate().then(()=>{done()});
   });
   describe('/GET',()=>{
@@ -45,24 +44,15 @@ describe('Ammo',()=>{
       chai.request(server)
       .post('/ammo')
       .field('Content-Type','multipart/form-data')
-      .field('Manufacturer',testModel.Manufacturer)
-      .field('Caliber',testModel.Caliber)
-      .field('BulletWeight',testModel.BulletWeight)
-      .field('Casing',testModel.Casing)
-      .field('BulletType',testModel.BulletType)
-      .field('MuzzleVelocity',testModel.MuzzleVelocity)
+      .field('AmmunitionType',testModel.AmmunitionType)
       .field('Rounds',testModel.Rounds)
       .end((err,res)=>{
         res.should.have.status(200);
         res.body.should.be.a('object');
         res.body.should.have.property('Id');
-        res.body.should.have.property('Manufacturer');
-        res.body.should.have.property('Caliber');
-        res.body.should.have.property('BulletWeight');
-        res.body.should.have.property('Casing');
-        res.body.should.have.property('BulletType');
-        res.body.should.have.property('MuzzleVelocity');
+        res.body.should.have.property('AmmunitionType');
         res.body.should.have.property('Rounds');
+        res.body.should.have.property('User');
         done();
       });
     });
@@ -70,17 +60,14 @@ describe('Ammo',()=>{
   describe('/GET/:id',()=>{
     it('should GET an Ammo object by the given id',(done)=>{
       let model = _createModel(testModel);
+      model.User = 'test-user';
       model.create().then(()=>{
         chai.request(server).get('/ammo/' + model.Id).end((err,res)=>{
           res.should.have.status(200);
           res.body.should.have.property('Id').eql(model.Id);
-          res.body.should.have.property('Manufacturer');
-          res.body.should.have.property('Caliber');
-          res.body.should.have.property('BulletWeight');
-          res.body.should.have.property('Casing');
-          res.body.should.have.property('BulletType');
-          res.body.should.have.property('MuzzleVelocity');
+          res.body.should.have.property('AmmunitionType');
           res.body.should.have.property('Rounds');
+          res.body.should.have.property('User');
           done();
         });
       });
@@ -89,6 +76,7 @@ describe('Ammo',()=>{
   describe('/PUT/:id',()=>{
     it('should UPDATE an Ammo object by the given id',(done)=>{
       let model = _createModel(testModel);
+      model.User = 'test-user';
       let updateModel = testModel;
       updateModel.Rounds = 500;
       model.create().then(()=>{
@@ -108,6 +96,7 @@ describe('Ammo',()=>{
   describe('/DELETE/:id',()=>{
     it('should DELETE an Ammo object given the id',(done)=>{
       let model = _createModel(testModel);
+      model.User = 'test-user';
       model.create().then(()=>{
         chai.request(server).delete('/ammo/' + model.Id).end((err,res)=>{
           res.should.have.status(200);

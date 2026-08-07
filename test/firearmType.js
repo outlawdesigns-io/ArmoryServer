@@ -10,13 +10,15 @@ import server from '../index.js';
 import ModelFactory from '@outlawdesigns/armorysdk';
 
 const testModel = {
-  Name: 'Gun Broker',
-  Website: 'https://www.gunbroker.com/',
-  User:'example'
+  Manufacturer: 13,
+  Caliber: 2,
+  Model: 'AM-15',
+  LinkToProduct:'http://www.google.com',
+  MSRP:468.95
 }
 
 function _createModel(targetObj){
-  let model = ModelFactory.get('vendor');
+  let model = ModelFactory.get('firearmtype');
   for(const [key,value] of Object.entries(targetObj)){
     model[key] = value;
   }
@@ -25,14 +27,14 @@ function _createModel(targetObj){
 
 chai.use(chaiHttp);
 
-describe('Vendor',()=>{
+describe('FirearmType',()=>{
   beforeEach(function(done){
     this.timeout(5000);
-    ModelFactory.getClass('vendor').truncate().then(()=>{done()});
+    ModelFactory.getClass('firearmtype').truncate().then(()=>{done()});
   });
   describe('/GET',()=>{
-    it('should GET all the Vendor objects',(done)=>{
-      chai.request(server).get('/vendor').end((err,res)=>{
+    it('should GET all the Firearm objects',(done)=>{
+      chai.request(server).get('/firearmtype').end((err,res)=>{
         res.should.have.status(200);
         res.body.should.be.a('array');
         res.body.length.should.be.eql(0);
@@ -41,65 +43,69 @@ describe('Vendor',()=>{
     });
   });
   describe('/POST',()=>{
-    it('should POST a new Vendor object',(done)=>{
+    it('should POST a new Firearm object',(done)=>{
       chai.request(server)
-      .post('/vendor')
+      .post('/firearmtype')
       .field('Content-Type','multipart/form-data')
-      .field('Name',testModel.Name)
-      .field('Website',testModel.Website)
+      .field('Manufacturer',testModel.Manufacturer)
+      .field('Caliber',testModel.Caliber)
+      .field('Model',testModel.Model)
+      .field('LinkToProduct',testModel.LinkToProduct)
+      .field('MSRP',testModel.MSRP)
       .end((err,res)=>{
         res.should.have.status(200);
         res.body.should.be.a('object');
         res.body.should.have.property('Id');
-        res.body.should.have.property('Name');
-        res.body.should.have.property('Website');
-        res.body.should.have.property('User');
+        res.body.should.have.property('Manufacturer');
+        res.body.should.have.property('Caliber');
+        res.body.should.have.property('Model');
+        res.body.should.have.property('LinkToProduct');
+        res.body.should.have.property('MSRP');
         done();
       });
     });
   });
   describe('/GET/:id',()=>{
-    it('should GET a Vendor object by the given id',(done)=>{
+    it('should GET a Firearm object by the given id',(done)=>{
       let model = _createModel(testModel);
-      model.User = 'test-user';
       model.create().then(()=>{
-        chai.request(server).get('/vendor/' + model.Id).end((err,res)=>{
+        chai.request(server).get('/firearmtype/' + model.Id).end((err,res)=>{
           res.should.have.status(200);
           res.body.should.have.property('Id').eql(model.Id);
-          res.body.should.have.property('Name');
-          res.body.should.have.property('Website');
-          res.body.should.have.property('User');
+          res.body.should.have.property('Manufacturer');
+          res.body.should.have.property('Caliber');
+          res.body.should.have.property('Model');
+          res.body.should.have.property('LinkToProduct');
+          res.body.should.have.property('MSRP');
           done();
         });
       });
     });
   });
   describe('/PUT/:id',()=>{
-    it('should UPDATE a Vendor object by the given id',(done)=>{
+    it('should UPDATE a Firearm object by the given id',(done)=>{
       let model = _createModel(testModel);
-      model.User = 'test-user';
       let updateModel = testModel;
-      updateModel.Website = 'https://google.com';
+      updateModel.MSRP = 510.99;
       model.create().then(()=>{
         chai.request(server)
-        .put('/vendor/' + model.Id)
+        .put('/firearmtype/' + model.Id)
         .field('Content-Type','multipart/form-data')
-        .field('Website',updateModel.Website)
+        .field('MSRP',updateModel.MSRP)
         .end((err,res)=>{
           res.should.have.status(200);
           res.body.should.be.a('object');
-          res.body.should.have.property('Website').eql(updateModel.Website);
+          res.body.should.have.property('MSRP').eql(`${updateModel.MSRP}`);
           done();
         });
       });
     });
   });
   describe('/DELETE/:id',()=>{
-    it('should DELETE a Vendor object given the id',(done)=>{
+    it('should DELETE a Firearm object given the id',(done)=>{
       let model = _createModel(testModel);
-      model.User = 'test-user';
       model.create().then(()=>{
-        chai.request(server).delete('/vendor/' + model.Id).end((err,res)=>{
+        chai.request(server).delete('/firearmtype/' + model.Id).end((err,res)=>{
           res.should.have.status(200);
           res.body.should.be.a('object');
           res.body.should.have.property('id').eql(model.id.toString());
